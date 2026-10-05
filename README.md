@@ -1,7 +1,7 @@
 # ⚡ Efficient LongRAG (E-LongRAG)
 
 > **Adaptive Context Filtering for High-Precision Long-Context LLM Retrieval**  
-> *Course: Large Language Models | Final Year Project | Midsem Evaluation*  
+> _Course: Large Language Models | Final Year Project | Midsem Evaluation_  
 > **Authors**: Pranav Vinodh, Durga Sai Pavan Gangabattula, Sameer
 
 ---
@@ -9,10 +9,12 @@
 ## 📌 Executive Summary
 
 Retrieval-Augmented Generation (RAG) paradigms face a fundamental trade-off:
-* **Short-Chunk RAG ($100$--$500$ tokens)**: Low token cost, but fragments multi-hop reasoning across document boundaries.
-* **Baseline LongRAG ($\approx 4,000$ tokens)** (*Jiang et al., arXiv:2410.18050*): Preserves document context, but causes **massive prompt bloat ($5,000+$ tokens)**, **high Time-To-First-Token (TTFT) pre-fill latency ($O(N^2)$ attention costs)**, and **"lost-in-the-middle" distractor hallucination**.
+
+- **Short-Chunk RAG ($100$--$500$ tokens)**: Low token cost, but fragments multi-hop reasoning across document boundaries.
+- **Baseline LongRAG ($\approx 4,000$ tokens)** (_Jiang et al., arXiv:2410.18050_): Preserves document context, but causes **massive prompt bloat ($5,000+$ tokens)**, **high Time-To-First-Token (TTFT) pre-fill latency ($O(N^2)$ attention costs)**, and **"lost-in-the-middle" distractor hallucination**.
 
 **Efficient LongRAG (E-LongRAG)** bridges this gap by combining coarse long-chunk retrieval with three lightweight post-retrieval neural and algorithmic optimization layers:
+
 1. **HyDE Query Expansion**: Synthesizes a hypothetical answer document $\hat{d} \sim P(\cdot | q)$ to project short queries into dense document space.
 2. **Intra-Chunk Paragraph Slicing & MiniLM Reranker**: Slices 4k chunks into $200$--$350$ token units and applies full joint cross-attention scoring ($R_{CE}$) via `cross-encoder/ms-marco-MiniLM-L-6-v2`, bypassing the 512-token BERT length limit.
 3. **Query-Adaptive Context Filtering & Deduplication**: Dynamically calculates score cutoff $\tau(q) = \max(0.40, \mu_R - 0.5\sigma_R)$ and prunes redundant duplicate passages ($\delta = 0.85$).
@@ -23,16 +25,16 @@ Retrieval-Augmented Generation (RAG) paradigms face a fundamental trade-off:
 
 Evaluated across 25 multi-hop academic benchmark queries on multi-hop technical reasoning tasks:
 
-| Model Configuration | Avg. Prompt Tokens | Retrieval Latency | Estimated LLM Pre-fill (TTFT) | Total Response Time | Context Precision |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **1. Baseline LongRAG** | $5,134.0\text{ tok}$ | $10.58\text{ ms}$ | $\approx 2,000\text{ ms}$ | $\approx 2,010\text{ ms}$ | $50.0\%$ |
-| **2. LongRAG + HyDE** | $5,123.0\text{ tok}$ | $14.65\text{ ms}$ | $\approx 2,000\text{ ms}$ | $\approx 2,015\text{ ms}$ | $65.0\%$ |
-| **3. LongRAG + Reranker** | $5,123.0\text{ tok}$ | $453.30\text{ ms}$ | $\approx 2,000\text{ ms}$ | $\approx 2,453\text{ ms}$ | $80.0\%$ |
-| **4. Full E-LongRAG** | **$260.8\text{ tok}$** | $472.41\text{ ms}$ | **$\approx 100\text{ ms}$** | **$\approx 570\text{ ms}$ (CPU) / $\approx 125\text{ ms}$ (GPU)** | **$95.0\%$** |
+| Model Configuration       |   Avg. Prompt Tokens   | Retrieval Latency  | Estimated LLM Pre-fill (TTFT) |                        Total Response Time                        | Context Precision |
+| :------------------------ | :--------------------: | :----------------: | :---------------------------: | :---------------------------------------------------------------: | :---------------: |
+| **1. Baseline LongRAG**   |  $5,134.0\text{ tok}$  | $10.58\text{ ms}$  |   $\approx 2,000\text{ ms}$   |                     $\approx 2,010\text{ ms}$                     |     $50.0\%$      |
+| **2. LongRAG + HyDE**     |  $5,123.0\text{ tok}$  | $14.65\text{ ms}$  |   $\approx 2,000\text{ ms}$   |                     $\approx 2,015\text{ ms}$                     |     $65.0\%$      |
+| **3. LongRAG + Reranker** |  $5,123.0\text{ tok}$  | $453.30\text{ ms}$ |   $\approx 2,000\text{ ms}$   |                     $\approx 2,453\text{ ms}$                     |     $80.0\%$      |
+| **4. Full E-LongRAG**     | **$260.8\text{ tok}$** | $472.41\text{ ms}$ |  **$\approx 100\text{ ms}$**  | **$\approx 570\text{ ms}$ (CPU) / $\approx 125\text{ ms}$ (GPU)** |   **$95.0\%$**    |
 
-* **Prompt Compression**: **$94.9\%$ prompt token reduction** ($5,134 \rightarrow 261$ tokens).
-* **Speedup**: **$19.7\times$ faster TTFT** during LLM attention pre-fill.
-* **Precision**: **$+45.0\%$ precision gain** ($50\% \rightarrow 95\%$).
+- **Prompt Compression**: **$94.9\%$ prompt token reduction** ($5,134 \rightarrow 261$ tokens).
+- **Speedup**: **$19.7\times$ faster TTFT** during LLM attention pre-fill.
+- **Precision**: **$+45.0\%$ precision gain** ($50\% \rightarrow 95\%$).
 
 ---
 
@@ -180,26 +182,30 @@ Then open your browser and navigate to:
 👉 **`http://localhost:8501`**
 
 #### 🎮 Interactive Features in the Demo:
-* **Side-by-Side Comparison**: Run real multi-hop queries side-by-side (Baseline LongRAG vs E-LongRAG).
-* **Live System Metrics**: Observe Prompt Token Savings ($94.9\%$), TTFT Latency Speedup ($19.7\times$), and Pruned Passages.
-* **Raw Corpus Inspector (Tab 2)**: Read the complete uncompressed 4k-token base documents.
-* **Noise Filter Inspector (Tab 3)**: Inspect extracted paragraphs with 🟢 `[+] RETAINED` and 🔴 `[-] PRUNED` badges and exact cross-encoder relevance scores.
-* **Latency & Systems Callout**: Understand the computational offloading trade-off between lightweight cross-encoders and heavy LLM readers.
+
+- **Side-by-Side Comparison**: Run real multi-hop queries side-by-side (Baseline LongRAG vs E-LongRAG).
+- **Live System Metrics**: Observe Prompt Token Savings ($94.9\%$), TTFT Latency Speedup ($19.7\times$), and Pruned Passages.
+- **Raw Corpus Inspector (Tab 2)**: Read the complete uncompressed 4k-token base documents.
+- **Noise Filter Inspector (Tab 3)**: Inspect extracted paragraphs with 🟢 `[+] RETAINED` and 🔴 `[-] PRUNED` badges and exact cross-encoder relevance scores.
+- **Latency & Systems Callout**: Understand the computational offloading trade-off between lightweight cross-encoders and heavy LLM readers.
 
 ---
 
 ### 4. Running Unit Tests & Benchmarks
 
 Run the unit test suite (verifies all modules end-to-end):
+
 ```bash
 python tests/test_modules.py
 ```
+
 ```
 Ran 7 tests in 29.610s
 OK
 ```
 
 Run the 4-way ablation benchmark and update plot figures:
+
 ```bash
 python tests/run_benchmark.py
 ```
@@ -208,11 +214,11 @@ python tests/run_benchmark.py
 
 ## 👥 Team & Individual Contributions
 
-| Team Member | Module & Responsibilities |
-| :--- | :--- |
-| **Pranav Vinodh** | • **Intra-Chunk Reranker**: Hierarchical paragraph decomposition & MiniLM Cross-Encoder joint scoring (`src/reranker.py`).<br>• **Adaptive Context Filter**: Dynamic threshold algorithm $\tau(q)$ and semantic cosine deduplication (`src/adaptive_filter.py`).<br>• **Interactive Web App**: Complete Streamlit evaluation dashboard (`app.py`). |
-| **Durga Sai Pavan Gangabattula** | • **HyDE Query Expansion**: Generative hypothetical document projection & embedding alignment (`src/hyde.py`).<br>• **Dataset Ingestion**: Multi-hop QA sample curation and structured caching (`src/dataset_loader.py`).<br>• **Unit Testing**: Test suite design and verification (`tests/test_modules.py`). |
-| **Sameer** | • **Vector Store Engine**: 4k chunking & FAISS dense vector search index (`src/vector_store.py`).<br>• **Ablation Benchmarking**: Performance profiling & empirical ablation experiments (`src/evaluator.py`).<br>• **Literature & Baseline**: LongRAG baseline survey and token overhead analysis. |
+| Team Member                      | Module & Responsibilities                                                                                                                                                                                                                                                                                                                          |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pranav Vinodh**                | • **Intra-Chunk Reranker**: Hierarchical paragraph decomposition & MiniLM Cross-Encoder joint scoring (`src/reranker.py`).<br>• **Adaptive Context Filter**: Dynamic threshold algorithm $\tau(q)$ and semantic cosine deduplication (`src/adaptive_filter.py`).<br>• **Interactive Web App**: Complete Streamlit evaluation dashboard (`app.py`). |
+| **Durga Sai Pavan Gangabattula** | • **HyDE Query Expansion**: Generative hypothetical document projection & embedding alignment (`src/hyde.py`).<br>• **Dataset Ingestion**: Multi-hop QA sample curation and structured caching (`src/dataset_loader.py`).<br>• **Unit Testing**: Test suite design and verification (`tests/test_modules.py`).                                     |
+| **Sameer**                       | • **Vector Store Engine**: 4k chunking & FAISS dense vector search index (`src/vector_store.py`).<br>• **Ablation Benchmarking**: Performance profiling & empirical ablation experiments (`src/evaluator.py`).<br>• **Literature & Baseline**: LongRAG baseline survey and token overhead analysis.                                                |
 
 ---
 
