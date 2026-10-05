@@ -20,78 +20,144 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for clean, readable, professional UI
+# Custom CSS for sleek, high-contrast, visually pleasing dark theme
 st.markdown("""
 <style>
+    /* Dark Theme Core Styles */
+    .stApp {
+        background-color: #090d16;
+        color: #f1f5f9;
+    }
     .main-header {
-        font-size: 2.1rem;
+        font-size: 2.2rem;
         font-weight: 800;
-        color: #1e3a8a;
-        margin-bottom: 0.1rem;
+        background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.2rem;
+        letter-spacing: -0.5px;
     }
     .sub-header {
-        font-size: 1.0rem;
-        color: #4b5563;
-        margin-bottom: 1.2rem;
+        font-size: 0.95rem;
+        color: #94a3b8;
+        margin-bottom: 1.4rem;
     }
     .question-banner {
-        background-color: #eff6ff;
-        border-left: 6px solid #2563eb;
+        background: linear-gradient(90deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        border-left: 5px solid #38bdf8;
         padding: 16px 20px;
-        border-radius: 6px;
+        border-radius: 8px;
         margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
     .ground-truth-banner {
-        background-color: #f8fafc;
-        border-left: 6px solid #64748b;
+        background: linear-gradient(90deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.85) 100%);
+        border: 1px solid rgba(168, 85, 247, 0.25);
+        border-left: 5px solid #a855f7;
         padding: 12px 18px;
-        border-radius: 6px;
+        border-radius: 8px;
         margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
     }
     .doc-card {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        background-color: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
     .retained-card {
-        background-color: #f0fdf4;
-        border: 1.5px solid #86efac;
-        border-radius: 8px;
-        padding: 14px;
-        margin-bottom: 12px;
+        background: linear-gradient(135deg, rgba(6, 78, 59, 0.25) 0%, rgba(6, 95, 70, 0.15) 100%);
+        border: 1.5px solid rgba(52, 211, 153, 0.45);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .pruned-card {
-        background-color: #fef2f2;
-        border: 1.5px solid #fca5a5;
-        border-radius: 8px;
-        padding: 14px;
-        margin-bottom: 12px;
+        background: linear-gradient(135deg, rgba(127, 29, 29, 0.25) 0%, rgba(153, 27, 27, 0.15) 100%);
+        border: 1.5px solid rgba(248, 113, 113, 0.45);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .retained-pill {
-        background-color: #16a34a;
-        color: white;
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        color: #ecfdf5;
         font-weight: 700;
-        font-size: 0.8rem;
-        padding: 4px 10px;
+        font-size: 0.78rem;
+        padding: 4px 12px;
         border-radius: 20px;
         display: inline-block;
+        letter-spacing: 0.3px;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
     }
     .pruned-pill {
-        background-color: #dc2626;
-        color: white;
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        color: #ffffff;
         font-weight: 700;
-        font-size: 0.8rem;
-        padding: 4px 10px;
+        font-size: 0.78rem;
+        padding: 4px 12px;
         border-radius: 20px;
         display: inline-block;
+        letter-spacing: 0.3px;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
     }
     .score-tag {
         font-weight: 700;
-        color: #1e293b;
-        font-size: 0.9rem;
+        color: #94a3b8;
+        font-size: 0.88rem;
+    }
+    /* Metric Cards Styling */
+    div[data-testid="stMetric"] {
+        background-color: #111827;
+        border: 1px solid #1f2937;
+        padding: 14px 18px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    div[data-testid="stMetricLabel"] {
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #f8fafc !important;
+        font-weight: 700 !important;
+    }
+    /* Tabs Navigation */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        border-bottom: 1px solid #1f2937;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 6px 6px 0 0;
+        padding: 8px 16px;
+        background-color: transparent;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(56, 189, 248, 0.12) !important;
+        color: #38bdf8 !important;
+        border-bottom: 2px solid #38bdf8 !important;
+    }
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        transition: all 0.2s ease-in-out;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+        box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
+        transform: translateY(-1px);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -191,15 +257,15 @@ retained_count = elong_out["stats"]["retained_count"]
 # -------------------------------------------------------------
 st.markdown(f"""
 <div class="question-banner">
-    <span style="font-size: 0.85rem; font-weight: 700; color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.5px;">📍 Full Question Under Evaluation:</span>
-    <div style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-top: 4px;">{active_query}</div>
+    <span style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">📍 Full Question Under Evaluation:</span>
+    <div style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">{active_query}</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="ground-truth-banner">
-    <span style="font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">🎯 Expected Target Fact (Ground Truth):</span>
-    <div style="font-size: 0.95rem; font-weight: 600; color: #334155; margin-top: 2px;">{active_gt}</div>
+    <span style="font-size: 0.8rem; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.5px;">🎯 Expected Target Fact (Ground Truth):</span>
+    <div style="font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin-top: 2px;">{active_gt}</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -260,9 +326,9 @@ with tab_comp:
 
     st.markdown("---")
     st.markdown("""
-    <div style="background-color: #f0fdfa; border-left: 6px solid #0d9488; padding: 16px 20px; border-radius: 6px; margin-top: 15px;">
-        <span style="font-size: 1.0rem; font-weight: 700; color: #0f766e;">💡 Understanding the Systems Latency & TTFT Trade-Off (Why E-LongRAG Wins in Production):</span>
-        <ul style="font-size: 0.88rem; color: #134e4a; margin-top: 8px; margin-bottom: 0; line-height: 1.6;">
+    <div style="background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%); border: 1px solid rgba(45, 212, 191, 0.3); border-left: 5px solid #2dd4bf; padding: 18px 22px; border-radius: 8px; margin-top: 15px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+        <span style="font-size: 1.0rem; font-weight: 700; color: #2dd4bf;">💡 Understanding the Systems Latency & TTFT Trade-Off (Why E-LongRAG Wins in Production):</span>
+        <ul style="font-size: 0.88rem; color: #cbd5e1; margin-top: 8px; margin-bottom: 0; line-height: 1.6;">
             <li><b>Why is Baseline retrieval 10ms?</b> Baseline LongRAG performs <i>zero neural filtering</i>—it shifts 100% of the computational burden onto the downstream LLM reader by dumping all 5,134 noisy tokens uncompressed into the prompt. In production, computing self-attention over 5,134 tokens on a large LLM (GPT-4 / Llama-3-70B) takes <b>~2,000 ms of Time-To-First-Token (TTFT)</b> and causes severe lost-in-the-middle hallucination.</li>
             <li><b>Why does E-LongRAG spend ~450ms on CPU?</b> E-LongRAG executes a lightweight 22M MiniLM Cross-Encoder over the candidate paragraphs to inspect, score, and prune out 95% of distractor tokens. (On a standard GPU, this reranking step takes <b>&lt;25 milliseconds</b>).</li>
             <li><b>The End-to-End Result:</b> By feeding only 260 dense tokens to the LLM instead of 5,134 tokens, E-LongRAG drops LLM pre-fill latency from 2,000ms down to ~100ms, making the <b>total end-to-end user response time &gt;3.5x to 14x FASTER</b> while saving 95% of API token costs.</li>
@@ -283,15 +349,15 @@ with tab_corpus:
             st.markdown(f"""
             <div class="doc-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 1.05rem; font-weight: 700; color: #1e3a8a;">📄 Chunk #{idx+1}: {chunk['chunk_id']}</span>
-                    <span style="font-size: 0.85rem; font-weight: 600; color: #64748b; background-color: #f1f5f9; padding: 3px 8px; border-radius: 4px;">
+                    <span style="font-size: 1.05rem; font-weight: 700; color: #38bdf8;">📄 Chunk #{idx+1}: {chunk['chunk_id']}</span>
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #94a3b8; background-color: #1e293b; padding: 3px 10px; border-radius: 4px; border: 1px solid #334155;">
                         Length: ~{chunk.get('approx_token_count', len(chunk['text'])//4)} tokens | Cosine Sim: {chunk.get('similarity_score', 0):.4f}
                     </span>
                 </div>
-                <div style="font-size: 0.85rem; color: #0369a1; font-weight: 600; margin-bottom: 10px;">
+                <div style="font-size: 0.85rem; color: #818cf8; font-weight: 600; margin-bottom: 10px;">
                     Included Document Topics: <i>{titles_str}</i>
                 </div>
-                <div style="font-size: 0.9rem; color: #334155; line-height: 1.6; white-space: pre-wrap; background-color: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.6; white-space: pre-wrap; background-color: #0b0f19; padding: 14px; border-radius: 6px; border: 1px solid #1e293b;">
 {chunk['text']}
                 </div>
             </div>
@@ -320,14 +386,14 @@ with tab_inspect:
         if is_retained:
             st.markdown(f"""
             <div class="retained-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div>
                         <span class="retained-pill">✔ RETAINED (HIGH SIGNAL)</span>
-                        <span style="font-size: 0.95rem; font-weight: 700; color: #166534; margin-left: 8px;">[{p['paragraph_id']}] {title_tag}</span>
+                        <span style="font-size: 0.95rem; font-weight: 700; color: #4ade80; margin-left: 8px;">[{p['paragraph_id']}] {title_tag}</span>
                     </div>
-                    <span class="score-tag">Cross-Encoder Relevance Score: <span style="color: #16a34a; font-size: 1.05rem;">{score:.4f}</span></span>
+                    <span class="score-tag">Cross-Encoder Relevance Score: <span style="color: #4ade80; font-size: 1.05rem; font-weight: 700;">{score:.4f}</span></span>
                 </div>
-                <div style="font-size: 0.9rem; color: #1e293b; line-height: 1.5; background: white; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                <div style="font-size: 0.9rem; color: #f1f5f9; line-height: 1.5; background: #090d16; padding: 12px; border-radius: 6px; border: 1px solid rgba(74, 222, 128, 0.25);">
                     {p['text']}
                 </div>
             </div>
@@ -336,17 +402,17 @@ with tab_inspect:
             prune_reason = p.get("prune_reason", "Low Relevance Score")
             st.markdown(f"""
             <div class="pruned-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div>
                         <span class="pruned-pill">✖ PRUNED (DISTRACTOR NOISE)</span>
-                        <span style="font-size: 0.95rem; font-weight: 700; color: #991b1b; margin-left: 8px;">[{p['paragraph_id']}] {title_tag}</span>
+                        <span style="font-size: 0.95rem; font-weight: 700; color: #f87171; margin-left: 8px;">[{p['paragraph_id']}] {title_tag}</span>
                     </div>
-                    <span class="score-tag">Cross-Encoder Relevance Score: <span style="color: #dc2626; font-size: 1.05rem;">{score:.4f}</span></span>
+                    <span class="score-tag">Cross-Encoder Relevance Score: <span style="color: #f87171; font-size: 1.05rem; font-weight: 700;">{score:.4f}</span></span>
                 </div>
-                <div style="font-size: 0.8rem; font-weight: 600; color: #b91c1c; margin-bottom: 6px;">
+                <div style="font-size: 0.8rem; font-weight: 600; color: #fca5a5; margin-bottom: 6px;">
                     Reason for Removal: {prune_reason}
                 </div>
-                <div style="font-size: 0.88rem; color: #64748b; line-height: 1.5; background: white; padding: 10px; border-radius: 6px; border: 1px solid #fecaca;">
+                <div style="font-size: 0.88rem; color: #94a3b8; line-height: 1.5; background: #090d16; padding: 12px; border-radius: 6px; border: 1px solid rgba(248, 113, 113, 0.25);">
                     {p['text']}
                 </div>
             </div>
@@ -448,17 +514,17 @@ with tab_sampling:
         m = s_info["metrics"]
         with st.container():
             st.markdown(f"""
-            <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-size: 1.0rem; font-weight: 700; color: #1e3a8a;">🔹 {s_name}</span>
-                    <span style="font-size: 0.85rem; font-weight: 600; color: #475569; background-color: #e2e8f0; padding: 2px 8px; border-radius: 4px;">
+            <div style="background-color: #111827; border: 1px solid #1f2937; border-top: 3px solid #38bdf8; border-radius: 10px; padding: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 1.05rem; font-weight: 700; color: #38bdf8;">🔹 {s_name}</span>
+                    <span style="font-size: 0.82rem; font-weight: 600; color: #38bdf8; background-color: rgba(56, 189, 248, 0.12); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25);">
                         {m['num_selected']} Passages | {m['retained_tokens']} Tokens | Diversity: {m['intra_diversity']:.3f} | Latency: {s_info['latency_ms']:.2f} ms
                     </span>
                 </div>
-                <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 8px;">
+                <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 10px;">
                     <i>{s_info['description']}</i>
                 </div>
-                <div style="font-size: 0.95rem; font-weight: 600; color: #0f172a; background-color: #ffffff; padding: 10px 14px; border-radius: 6px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 0.95rem; font-weight: 500; color: #f1f5f9; background-color: #090d16; padding: 12px 16px; border-radius: 6px; border-left: 4px solid #38bdf8; border: 1px solid #1e293b; line-height: 1.6;">
                     {s_info['generated_answer']}
                 </div>
             </div>
@@ -473,9 +539,9 @@ with tab_sampling:
     # Strategy Takeaways & Guidance
     st.markdown("---")
     st.markdown("""
-    <div style="background-color: #eff6ff; border-left: 6px solid #2563eb; padding: 16px 20px; border-radius: 6px; margin-top: 15px;">
-        <span style="font-size: 1.0rem; font-weight: 700; color: #1d4ed8;">🔍 Architectural Takeaways & Practical Analysis:</span>
-        <ul style="font-size: 0.88rem; color: #1e3a8a; margin-top: 8px; margin-bottom: 0; line-height: 1.6;">
+    <div style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-left: 5px solid #38bdf8; padding: 18px 22px; border-radius: 8px; margin-top: 15px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+        <span style="font-size: 1.0rem; font-weight: 700; color: #38bdf8;">🔍 Architectural Takeaways & Practical Analysis:</span>
+        <ul style="font-size: 0.88rem; color: #cbd5e1; margin-top: 8px; margin-bottom: 0; line-height: 1.6;">
             <li><b>Deterministic Top-K:</b> Fastest to compute, but frequently selects redundant passages from the same chunk that repeat the exact same sentences, inflating prompt tokens without providing new information.</li>
             <li><b>Nucleus (Top-p) Sampling:</b> Automatically expands or contracts the prompt context based on score distribution confidence. When one passage is overwhelmingly confident, it truncates early to save tokens; when scores are close, it includes multiple passages.</li>
             <li><b>Boltzmann Sampling:</b> Softmax temperature controls the trade-off between exploitation of the top candidate and exploration of lower-ranked passages, preventing hard-cutoff bias.</li>
