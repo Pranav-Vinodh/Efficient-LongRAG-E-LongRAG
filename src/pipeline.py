@@ -7,6 +7,7 @@ from .vector_store import LongRAGVectorStore
 from .hyde import HyDEQueryExpander
 from .reranker import MiniLMReranker
 from .adaptive_filter import AdaptiveContextFilter
+from .sampling import RetrievalSamplingStrategies
 
 class ELongRAGPipeline:
     """
@@ -120,13 +121,20 @@ class ELongRAGPipeline:
             }
         }
 
-    def run_elongrag(self, query, top_k=3, use_hyde=True, use_reranker=True, use_adaptive_filter=True):
+    def run_elongrag(self, query, top_k=3, use_hyde=True, use_reranker=True, use_adaptive_filter=True, sampling_strategy="adaptive", sampling_params=None):
         """
-        Executes the full proposed Efficient LongRAG (E-LongRAG) pipeline:
-        User Query -> [HyDE] -> FAISS Search -> Paragraph Slicing -> [MiniLM Reranker] -> [Adaptive Filter] -> Compact Context -> LLM.
+        Executes the Efficient LongRAG (E-LongRAG) pipeline:
+        User Query -> [HyDE] -> FAISS Search -> Paragraph Slicing -> [MiniLM Reranker] -> [Sampling / Filter] -> Compact Context -> LLM.
+        Supported sampling_strategy options:
+            - 'adaptive' (Query-Adaptive Dynamic Filter + Deduplication)
+            - 'top_k' (Deterministic Top-K)
+            - 'nucleus' (Nucleus Top-p Softmax Sampling)
+            - 'boltzmann' (Boltzmann Stochastic Temperature Sampling)
+            - 'mmr' (Maximal Marginal Relevance)
         """
         start_total = time.time()
         latencies = {}
+        sampling_params = sampling_params or {}
 
         # Stage 1: HyDE Query Expansion
         search_query = query
@@ -156,28 +164,116 @@ class ELongRAGPipeline:
             scored_paragraphs = [dict(p, relevance_score=1.0 - i*0.05) for i, p in enumerate(candidate_paragraphs)]
             latencies["cross_encoder_rerank"] = 0.0
 
-        # Stage 4: Query-Adaptive Context Filtering & Deduplication
-        if use_adaptive_filter:
-            filter_start = time.time()
-            retained_paras, pruned_paras, compact_context, stats = self.filter.filter_and_deduplicate(
-                scored_paragraphs, self.vector_store
-            )
-            latencies["adaptive_filtering"] = (time.time() - filter_start) * 1000.0
-        else:
+        # Stage 4: Passage Selection / Sampling Strategy
+        filter_start = time.time()
+        orig_cand_tokens = sum(p.get("approx_token_count", len(p["text"]) // 4) for p in scored_paragraphs)
+
+        if not use_adaptive_filter or sampling_strategy == "all":
             retained_paras = scored_paragraphs
             pruned_paras = []
             compact_context = "\n\n".join([p["text"] for p in retained_paras])
             retained_tokens = sum(p.get("approx_token_count", len(p["text"]) // 4) for p in retained_paras)
             stats = {
+                "strategy": "Unfiltered Candidates",
                 "dynamic_threshold": 0.0,
                 "retained_count": len(retained_paras),
                 "pruned_count": 0,
                 "retained_tokens": retained_tokens,
-                "original_tokens": retained_tokens,
+                "original_tokens": orig_cand_tokens,
                 "compression_ratio_pct": 0.0,
                 "ttft_speedup_factor": 1.0
             }
-            latencies["adaptive_filtering"] = 0.0
+        elif sampling_strategy == "adaptive":
+            retained_paras, pruned_paras, compact_context, stats = self.filter.filter_and_deduplicate(
+                scored_paragraphs, self.vector_store
+            )
+            stats["strategy"] = "Adaptive Dynamic Filter"
+        elif sampling_strategy == "top_k":
+            k_val = sampling_params.get("k", 2)
+            retained_paras = RetrievalSamplingStrategies.top_k_sampling(scored_paragraphs, k=k_val)
+            retained_ids = {p["paragraph_id"] for p in retained_paras}
+            pruned_paras = [dict(p, prune_reason=f"Rank > Top-{k_val}") for p in scored_paragraphs if p["paragraph_id"] not in retained_ids]
+            m = RetrievalSamplingStrategies.compute_context_metrics(retained_paras, scored_paragraphs, self.vector_store)
+            compact_context = m["context_text"]
+            stats = {
+                "strategy": f"Deterministic Top-{k_val}",
+                "dynamic_threshold": retained_paras[-1].get("relevance_score", 0.0) if retained_paras else 0.0,
+                "retained_count": len(retained_paras),
+                "pruned_count": len(pruned_paras),
+                "retained_tokens": m["retained_tokens"],
+                "original_tokens": orig_cand_tokens,
+                "compression_ratio_pct": m["token_savings_pct"],
+                "ttft_speedup_factor": round(orig_cand_tokens / max(1, m["retained_tokens"]), 2),
+                "intra_diversity": m["intra_diversity"],
+                "mean_relevance": m["mean_relevance"]
+            }
+        elif sampling_strategy == "nucleus":
+            p_val = sampling_params.get("p", 0.85)
+            t_val = sampling_params.get("temperature", 1.0)
+            retained_paras = RetrievalSamplingStrategies.nucleus_top_p_sampling(scored_paragraphs, p=p_val, temperature=t_val)
+            retained_ids = {p["paragraph_id"] for p in retained_paras}
+            pruned_paras = [dict(p, prune_reason=f"Outside Nucleus Mass (p > {p_val})") for p in scored_paragraphs if p["paragraph_id"] not in retained_ids]
+            m = RetrievalSamplingStrategies.compute_context_metrics(retained_paras, scored_paragraphs, self.vector_store)
+            compact_context = m["context_text"]
+            stats = {
+                "strategy": f"Nucleus Top-p (p={p_val})",
+                "dynamic_threshold": retained_paras[-1].get("relevance_score", 0.0) if retained_paras else 0.0,
+                "retained_count": len(retained_paras),
+                "pruned_count": len(pruned_paras),
+                "retained_tokens": m["retained_tokens"],
+                "original_tokens": orig_cand_tokens,
+                "compression_ratio_pct": m["token_savings_pct"],
+                "ttft_speedup_factor": round(orig_cand_tokens / max(1, m["retained_tokens"]), 2),
+                "intra_diversity": m["intra_diversity"],
+                "mean_relevance": m["mean_relevance"]
+            }
+        elif sampling_strategy == "boltzmann":
+            k_val = sampling_params.get("k", 2)
+            t_val = sampling_params.get("temperature", 0.5)
+            seed = sampling_params.get("seed", 42)
+            retained_paras = RetrievalSamplingStrategies.boltzmann_sampling(scored_paragraphs, k=k_val, temperature=t_val, seed=seed)
+            retained_ids = {p["paragraph_id"] for p in retained_paras}
+            pruned_paras = [dict(p, prune_reason=f"Not Sampled under Boltzmann (T={t_val})") for p in scored_paragraphs if p["paragraph_id"] not in retained_ids]
+            m = RetrievalSamplingStrategies.compute_context_metrics(retained_paras, scored_paragraphs, self.vector_store)
+            compact_context = m["context_text"]
+            stats = {
+                "strategy": f"Boltzmann Sampling (T={t_val})",
+                "dynamic_threshold": 0.0,
+                "retained_count": len(retained_paras),
+                "pruned_count": len(pruned_paras),
+                "retained_tokens": m["retained_tokens"],
+                "original_tokens": orig_cand_tokens,
+                "compression_ratio_pct": m["token_savings_pct"],
+                "ttft_speedup_factor": round(orig_cand_tokens / max(1, m["retained_tokens"]), 2),
+                "intra_diversity": m["intra_diversity"],
+                "mean_relevance": m["mean_relevance"]
+            }
+        elif sampling_strategy == "mmr":
+            k_val = sampling_params.get("k", 2)
+            lam_val = sampling_params.get("lambda_param", 0.7)
+            retained_paras = RetrievalSamplingStrategies.maximal_marginal_relevance(
+                scored_paragraphs, self.vector_store, k=k_val, lambda_param=lam_val
+            )
+            retained_ids = {p["paragraph_id"] for p in retained_paras}
+            pruned_paras = [dict(p, prune_reason=f"Redundancy Penalty / Low MMR (lambda={lam_val})") for p in scored_paragraphs if p["paragraph_id"] not in retained_ids]
+            m = RetrievalSamplingStrategies.compute_context_metrics(retained_paras, scored_paragraphs, self.vector_store)
+            compact_context = m["context_text"]
+            stats = {
+                "strategy": f"MMR (lambda={lam_val})",
+                "dynamic_threshold": 0.0,
+                "retained_count": len(retained_paras),
+                "pruned_count": len(pruned_paras),
+                "retained_tokens": m["retained_tokens"],
+                "original_tokens": orig_cand_tokens,
+                "compression_ratio_pct": m["token_savings_pct"],
+                "ttft_speedup_factor": round(orig_cand_tokens / max(1, m["retained_tokens"]), 2),
+                "intra_diversity": m["intra_diversity"],
+                "mean_relevance": m["mean_relevance"]
+            }
+        else:
+            raise ValueError(f"Unknown sampling_strategy: {sampling_strategy}")
+
+        latencies["adaptive_filtering"] = (time.time() - filter_start) * 1000.0
 
         # Stage 5: Response Generation
         gen_start = time.time()
@@ -188,7 +284,7 @@ class ELongRAGPipeline:
         latencies["total"] = total_lat
 
         return {
-            "mode": "E-LongRAG (Proposed)",
+            "mode": f"E-LongRAG [{stats.get('strategy', 'Adaptive')}]",
             "query": query,
             "top_k": top_k,
             "hyde_passage": hyde_info,
@@ -200,6 +296,113 @@ class ELongRAGPipeline:
             "stats": stats,
             "generated_answer": answer,
             "latency_ms": latencies
+        }
+
+    def run_sampling_ablation(self, query, top_k=2, k=2, p=0.85, temperature=0.5, lambda_param=0.7, seed=42):
+        """
+        Runs an end-to-end ablation comparing all 5 retrieval context sampling strategies
+        on the exact same candidate paragraphs retrieved from long chunks:
+        1. Proposed Adaptive Context Filter (Dynamic tau(q) + deduplication)
+        2. Deterministic Top-K Sampling
+        3. Nucleus (Top-p) Sampling
+        4. Boltzmann (Temperature-scaled) Sampling
+        5. Maximal Marginal Relevance (MMR)
+        """
+        # Step 1: HyDE + Vector Search
+        hyde_res = self.hyde.get_hyde_embedding(query, self.vector_store)
+        retrieved_chunks, _ = self.vector_store.search(hyde_res["hyde_vector"], top_k=top_k)
+
+        # Step 2: Intra-chunk slicing + Cross-Encoder scoring
+        candidate_paragraphs = batch_slice_chunks(retrieved_chunks)
+        scored_paragraphs, _ = self.reranker.score_paragraphs(query, candidate_paragraphs)
+
+        # Step 3: Run each strategy
+        # 1. Adaptive Context Filter
+        t0 = time.time()
+        retained_adapt, pruned_adapt, text_adapt, stats_adapt = self.filter.filter_and_deduplicate(
+            scored_paragraphs, self.vector_store
+        )
+        t_adapt = (time.time() - t0) * 1000.0
+        m_adapt = RetrievalSamplingStrategies.compute_context_metrics(retained_adapt, candidate_paragraphs, self.vector_store)
+        ans_adapt = self.generate_answer(query, m_adapt["context_text"], is_baseline=False)
+
+        # 2. Deterministic Top-K
+        t0 = time.time()
+        selected_topk = RetrievalSamplingStrategies.top_k_sampling(scored_paragraphs, k=k)
+        t_topk = (time.time() - t0) * 1000.0
+        m_topk = RetrievalSamplingStrategies.compute_context_metrics(selected_topk, candidate_paragraphs, self.vector_store)
+        ans_topk = self.generate_answer(query, m_topk["context_text"], is_baseline=False)
+
+        # 3. Nucleus (Top-p) Sampling
+        t0 = time.time()
+        selected_nucleus = RetrievalSamplingStrategies.nucleus_top_p_sampling(scored_paragraphs, p=p, temperature=1.0)
+        t_nucleus = (time.time() - t0) * 1000.0
+        m_nucleus = RetrievalSamplingStrategies.compute_context_metrics(selected_nucleus, candidate_paragraphs, self.vector_store)
+        ans_nucleus = self.generate_answer(query, m_nucleus["context_text"], is_baseline=False)
+
+        # 4. Boltzmann Sampling
+        t0 = time.time()
+        selected_boltz = RetrievalSamplingStrategies.boltzmann_sampling(scored_paragraphs, k=k, temperature=temperature, seed=seed)
+        t_boltz = (time.time() - t0) * 1000.0
+        m_boltz = RetrievalSamplingStrategies.compute_context_metrics(selected_boltz, candidate_paragraphs, self.vector_store)
+        ans_boltz = self.generate_answer(query, m_boltz["context_text"], is_baseline=False)
+
+        # 5. MMR Sampling
+        t0 = time.time()
+        selected_mmr = RetrievalSamplingStrategies.maximal_marginal_relevance(scored_paragraphs, self.vector_store, k=k, lambda_param=lambda_param)
+        t_mmr = (time.time() - t0) * 1000.0
+        m_mmr = RetrievalSamplingStrategies.compute_context_metrics(selected_mmr, candidate_paragraphs, self.vector_store)
+        ans_mmr = self.generate_answer(query, m_mmr["context_text"], is_baseline=False)
+
+        total_cand_tokens = sum(p.get("approx_token_count", len(p["text"]) // 4) for p in candidate_paragraphs)
+
+        return {
+            "query": query,
+            "candidate_paragraphs": scored_paragraphs,
+            "candidate_tokens": total_cand_tokens,
+            "parameters": {
+                "k": k,
+                "p": p,
+                "temperature": temperature,
+                "lambda_param": lambda_param
+            },
+            "strategies": {
+                "Adaptive Filter (Proposed)": {
+                    "selected_paragraphs": retained_adapt,
+                    "metrics": m_adapt,
+                    "latency_ms": round(t_adapt, 3),
+                    "generated_answer": ans_adapt,
+                    "description": "Dynamic threshold tau(q) + semantic cosine deduplication (variable window size)"
+                },
+                "Deterministic Top-K": {
+                    "selected_paragraphs": selected_topk,
+                    "metrics": m_topk,
+                    "latency_ms": round(t_topk, 3),
+                    "generated_answer": ans_topk,
+                    "description": f"Strict top-{k} cutoff by cross-encoder score; vulnerable to redundant passages"
+                },
+                "Nucleus (Top-p)": {
+                    "selected_paragraphs": selected_nucleus,
+                    "metrics": m_nucleus,
+                    "latency_ms": round(t_nucleus, 3),
+                    "generated_answer": ans_nucleus,
+                    "description": f"Cumulative softmax probability mass p={p:.2f}; dynamically adjusts passage count"
+                },
+                "Boltzmann Sampling": {
+                    "selected_paragraphs": selected_boltz,
+                    "metrics": m_boltz,
+                    "latency_ms": round(t_boltz, 3),
+                    "generated_answer": ans_boltz,
+                    "description": f"Stochastic sampling without replacement (T={temperature}); balances exploration"
+                },
+                "Maximal Marginal Relevance (MMR)": {
+                    "selected_paragraphs": selected_mmr,
+                    "metrics": m_mmr,
+                    "latency_ms": round(t_mmr, 3),
+                    "generated_answer": ans_mmr,
+                    "description": f"Relevance vs pairwise cosine diversity trade-off (lambda={lambda_param:.2f})"
+                }
+            }
         }
 
     def compare(self, query, top_k=3):
