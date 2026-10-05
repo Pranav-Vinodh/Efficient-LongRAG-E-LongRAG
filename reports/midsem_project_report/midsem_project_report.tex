@@ -43,14 +43,48 @@ Retrieval-Augmented Generation, Long-Context LLMs, Adaptive Context Filtering, C
 \section{Introduction and Problem Statement}
 \IEEEPARstart{R}{etrieval-Augmented} Generation (RAG) has emerged as the standard paradigm for grounding Large Language Models (LLMs) on private corpora and dynamic knowledge bases without expensive fine-tuning. However, current RAG systems suffer from a severe architectural tension dictated by the granularity of document chunking:
 
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+    base/.style={draw, rounded corners=4pt, align=center, font=\footnotesize, minimum height=1.05cm, drop shadow},
+    query/.style={base, fill=blue!12, draw=blue!75, text width=2.3cm},
+    process/.style={base, fill=teal!12, draw=teal!75, text width=2.3cm},
+    filter/.style={base, fill=orange!12, draw=orange!75, text width=2.3cm},
+    output/.style={base, fill=green!15, draw=green!70!black, text width=2.3cm},
+    arrow/.style={-{Stealth[scale=1.15]}, thick, draw=gray!70},
+    lbl/.style={font=\scriptsize, fill=white, inner sep=2pt, rounded corners=2pt, draw=gray!35, align=center, text=black}
+]
+    % Row 1 Nodes (Forward Retrieval Pipeline: 4.6cm step, 23mm arrows)
+    \node (q) [query] at (0.6, 0) {\textbf{User Query $q$}\\(Multi-Hop QA)};
+    \node (hyde) [process] at (5.2, 0) {\textbf{1. HyDE Expansion}\\$\hat{d} \sim P_{\text{LM}}(\cdot \mid q)$\\Dense Embedding};
+    \node (faiss) [process] at (9.8, 0) {\textbf{2. FAISS Index}\\Coarse Long Chunks\\Top-$K$ ($\sim$4k tokens)};
+    \node (slice) [filter] at (14.4, 0) {\textbf{3. Paragraph Slicer}\\Intra-Chunk Units\\($200$--$350$ tokens)};
+
+    % Row 2 Nodes (Neural Reranking & Dynamic Pruning: y = -2.5)
+    \node (rerank) [filter] at (14.4, -2.5) {\textbf{4. MiniLM Reranker}\\Joint Cross-Attention\\Calibrated $R_{CE}(q, p)$};
+    \node (adapt) [filter] at (9.8, -2.5) {\textbf{5. Dynamic Filter}\\$\tau(q) = \mu_R - \alpha \sigma_R$\\Cosine Dedup $\delta=0.85$};
+    \node (llm) [output] at (5.2, -2.5) {\textbf{Dense Context}\\$\approx 260$ tokens ($95\%$ less)\\$\rightarrow$ \textbf{LLM Reader}};
+
+    % Well-spaced, non-overlapping connector arrows (21mm arrow spans)
+    \draw [arrow] (q) -- node[lbl] {Raw Query} (hyde);
+    \draw [arrow] (hyde) -- node[lbl] {Dense $E(\hat{d})$} (faiss);
+    \draw [arrow] (faiss) -- node[lbl] {4k Chunks} (slice);
+    \draw [arrow] (slice) -- node[lbl, right=6pt] {Paragraphs\\$\{p_{k,j}\}$} (rerank);
+    \draw [arrow] (rerank) -- node[lbl] {Scores $R_{CE}$} (adapt);
+    \draw [arrow] (adapt) -- node[lbl] {Pruned Context\\($94.9\%$ savings)} (llm);
+\end{tikzpicture}
+\caption{End-to-End System Flowchart of the Proposed Efficient LongRAG (E-LongRAG) Pipeline.}
+\label{fig:architecture}
+\end{figure*}
+
 \subsection{The Short-Chunk Fragmentation Dilemma}
 Standard RAG pipelines partition documents into short textual snippets (typically $100$ to $500$ tokens). While short chunks minimize prompt token counts, they inevitably sever relationships that span multi-paragraph boundaries. In complex reasoning and multi-hop question answering, vital evidence is scattered across disjoint chunks, causing dense vector bi-encoders to retrieve incomplete, ungrounded fragments that lead to reader hallucination.
 
 \subsection{The LongRAG Prompt Bloat and Latency Bottleneck}
-To preserve structural continuity, recent work such as \textit{LongRAG} (Jiang et al., 2024) increases chunk sizes by over an order of magnitude into coarse 2,000--4,000 token multi-document blocks. While this successfully preserves narrative coherence, it shifts an enormous computational and cognitive burden onto the downstream LLM reader:
+To preserve structural continuity, recent work such as \textit{LongRAG} by Jiang \textit{et al.}~\cite{longrag} increases chunk sizes by over an order of magnitude into coarse 2,000--4,000 token multi-document blocks. While this successfully preserves narrative coherence, it shifts an enormous computational and cognitive burden onto the downstream LLM reader:
 \begin{enumerate}
-    \item \textbf{Quadratic Attention Overhead ($O(N^2)$ TTFT):} In transformer decoders, prompt pre-fill latency scales quadratically with input sequence length. Processing raw 5,000-token prompts inflates Time-To-First-Token (TTFT) by $15\times$--$30\times$ compared to concise prompts, imposing severe operational costs.
-    \item \textbf{Lost-in-the-Middle Hallucination:} As demonstrated by Liu et al. (2024), long-context LLMs exhibit a pronounced U-shaped attention distribution: tokens positioned in the middle of long contexts suffer drastic attention degradation, causing the reader to miss key facts buried among surrounding irrelevant paragraphs.
+    \item \textbf{Quadratic Attention Overhead ($O(N^2)$ TTFT):} In transformer decoders~\cite{attention}, prompt pre-fill latency scales quadratically with input sequence length. Processing raw 5,000-token prompts inflates Time-To-First-Token (TTFT) by $15\times$--$30\times$ compared to concise prompts, imposing severe operational costs.
+    \item \textbf{Lost-in-the-Middle Hallucination:} As demonstrated by Liu \textit{et al.}~\cite{lostinmiddle}, long-context LLMs exhibit a pronounced U-shaped attention distribution: tokens positioned in the middle of long contexts suffer drastic attention degradation, causing the reader to miss key facts buried among surrounding irrelevant paragraphs.
     \item \textbf{Token Consumption and Cost:} Redundant distractor text inflates inference API costs by over 90\% on commercial cloud LLMs.
 \end{enumerate}
 
@@ -62,48 +96,15 @@ The objective of this research is to construct an end-to-end framework, \textbf{
     \item \textit{Near-instantaneous TTFT} and high context precision ($\ge 90\%$) without compromising multi-hop factual completeness.
 \end{itemize}
 
-% -------------------------------------------------------------
 \section{Proposed Methodology (E-LongRAG Architecture)}
 The proposed E-LongRAG architecture operates across five distinct sequential stages as illustrated in Fig.~\ref{fig:architecture}.
 
-\begin{figure*}[!t]
-\centering
-\begin{tikzpicture}[
-    node distance=1.2cm and 0.8cm,
-    base/.style={draw, rounded corners=3pt, align=center, font=\footnotesize, minimum height=0.8cm, drop shadow},
-    query/.style={base, fill=blue!15, draw=blue!70, text width=2.3cm},
-    process/.style={base, fill=teal!15, draw=teal!70, text width=2.4cm},
-    filter/.style={base, fill=orange!15, draw=orange!70, text width=2.5cm},
-    output/.style={base, fill=green!15, draw=green!70, text width=2.4cm},
-    arrow/.style={-{Stealth[length=2.5mm]}, thick, draw=gray!80}
-]
-    % Nodes
-    \node (q) [query] {\textbf{User Query $q$}\\(Multi-Hop QA)};
-    \node (hyde) [process, right=of q] {\textbf{1. HyDE Generator}\\$\hat{d} \sim P(\cdot \mid q)$\\Dense Projection};
-    \node (faiss) [process, right=of hyde] {\textbf{2. FAISS Vector Store}\\Coarse Long Chunks\\Top-$K$ ($\sim$4k tokens)};
-    \node (slice) [filter, right=of faiss] {\textbf{3. Paragraph Slicer}\\Intra-Chunk Units\\($200$--$350$ tokens)};
-    \node (rerank) [filter, below=1.0cm of slice] {\textbf{4. MiniLM Cross-Encoder}\\Joint $R_{CE}(q, p_{i,j})$\\Full Cross-Attention};
-    \node (adapt) [filter, left=of rerank] {\textbf{5. Adaptive Filter}\\Dynamic $\tau(q)$\\Cosine Dedup $\delta=0.85$};
-    \node (llm) [output, left=of adapt] {\textbf{Compact Context}\\($\sim 260$ tokens)\\$\rightarrow$ LLM Reader};
-
-    % Paths
-    \draw [arrow] (q) -- (hyde);
-    \draw [arrow] (hyde) -- node[above, font=\scriptsize] {$E(\hat{d})$} (faiss);
-    \draw [arrow] (faiss) -- node[above, font=\scriptsize] {Top-$K$ Chunks} (slice);
-    \draw [arrow] (slice) -- node[right, font=\scriptsize] {$\{p_{i,j}\}$} (rerank);
-    \draw [arrow] (rerank) -- node[above, font=\scriptsize] {Scored Pairs} (adapt);
-    \draw [arrow] (adapt) -- node[above, font=\scriptsize] {95\% Pruned} (llm);
-\end{tikzpicture}
-\caption{End-to-End System Flowchart of the Proposed Efficient LongRAG (E-LongRAG) Pipeline.}
-\label{fig:architecture}
-\end{figure*}
-
 \subsection{Pillar 1: HyDE-Augmented Generative Query Expansion}
-Short technical questions often suffer from severe lexical mismatch against long technical documents. Standard bi-encoders compute semantic similarity between an asymmetric query $q$ and candidate documents $d$. We employ \textit{Hypothetical Document Embeddings (HyDE)} (Gao et al., 2022) to synthesize an ideal hypothetical passage $\hat{d}$:
+Short technical questions often suffer from severe lexical mismatch against long technical documents. Standard dense bi-encoders~\cite{sbert} compute semantic similarity between an asymmetric query $q$ and candidate documents $d$. We employ \textit{Hypothetical Document Embeddings (HyDE)}~\cite{hyde} to synthesize an ideal hypothetical passage $\hat{d}$:
 \begin{equation}
 \hat{d} \sim P_{\text{LM}}(\cdot \mid q)
 \end{equation}
-The hypothetical document $\hat{d}$ is encoded via a dense bi-encoder $E(\cdot)$ (\texttt{all-MiniLM-L6-v2}):
+The hypothetical document $\hat{d}$ is encoded via a dense bi-encoder $E(\cdot)$ (\texttt{all-MiniLM-L6-v2})~\cite{sbert}:
 \begin{equation}
 v_{\text{search}} = \frac{E(\hat{d})}{\|E(\hat{d})\|_2}
 \end{equation}
@@ -117,7 +118,7 @@ c_k \longrightarrow \{ p_{k,1}, p_{k,2}, \dots, p_{k,m} \}, \quad |p_{k,j}| \in 
 This hierarchical decomposition decouples retrieval unit size from reranking unit size.
 
 \subsection{Pillar 3: MiniLM Cross-Encoder Neural Reranking}
-Unlike bi-encoders that encode query and document into separate vectors and compute cosine similarity, cross-encoders concatenate query and paragraph into a single sequence:
+Unlike bi-encoders~\cite{sbert} that encode query and document into separate vectors and compute cosine similarity, cross-encoders~\cite{crossencoder} concatenate query and paragraph into a single sequence:
 \begin{equation}
 \text{Input} = \text{[CLS]} \circ q \circ \text{[SEP]} \circ p_{k,j} \circ \text{[SEP]}
 \end{equation}
@@ -144,30 +145,17 @@ Any paragraph with $\text{Sim}(p_a, p_b) \ge \delta = 0.85$ is pruned, yielding 
 \section{What Has Been Implemented So Far (Midsem Deliverables)}
 
 \subsection{Core Modular Implementation}
-The implementation has been structured into a modular Python package located at \texttt{src/}:
+The implementation is organized into a modular Python package located at \texttt{src/}:
 \begin{itemize}
-    \item \texttt{src/config.py}: Centralized configuration, hyperparameter management, and dataset paths;
-    \item \texttt{src/dataset\_loader.py}: Benchmark dataset ingestion with multi-hop grounding and realistic domain distractor generation;
-    \item \texttt{src/chunker.py}: Coarse chunk assembler ($4,000$ tokens) and intra-chunk paragraph slicer ($200$--$350$ tokens);
-    \item \texttt{src/vector\_store.py}: FAISS \texttt{IndexFlatIP} index with unit-normalized embeddings;
-    \item \texttt{src/hyde.py}: Generative query expansion engine;
-    \item \texttt{src/reranker.py}: Joint cross-attention MiniLM cross-encoder;
-    \item \texttt{src/adaptive\_filter.py}: Dynamic thresholding and cosine deduplication engine;
-    \item \texttt{src/pipeline.py}: Unified orchestrator comparing Baseline LongRAG against E-LongRAG;
-    \item \texttt{src/evaluator.py}: Quantitative ablation evaluation and high-resolution chart plotting engine (\texttt{plots/}).
+    \item \texttt{config.py} \& \texttt{dataset\_loader.py}: Centralized configuration and multi-hop benchmark ingestion with realistic domain distractors;
+    \item \texttt{chunker.py} \& \texttt{vector\_store.py}: Coarse chunk assembling ($4,000$ tokens), intra-chunk paragraph slicing ($200$--$350$ tokens), and normalized FAISS \texttt{IndexFlatIP} vector indexing;
+    \item \texttt{hyde.py} \& \texttt{reranker.py}: Generative query expansion engine and cross-attention neural reranking with \texttt{cross-encoder/ms-marco-MiniLM-L-6-v2};
+    \item \texttt{adaptive\_filter.py} \& \texttt{pipeline.py}: Dynamic thresholding, cosine deduplication, and comparative orchestration against baseline LongRAG;
+    \item \texttt{evaluator.py}: Quantitative ablation metrics and visualization engine.
 \end{itemize}
 
 \subsection{Automated Unit Testing}
-An automated test suite in \texttt{tests/test\_modules.py} verifies all submodules end-to-end. All 7 unit tests pass with 100\% success rate:
-\begin{enumerate}
-    \item \texttt{test\_dataset\_loader}: Verified multi-hop question-answer pair loading and integrity;
-    \item \texttt{test\_chunker}: Verified 4k long-chunk generation and intra-chunk paragraph decomposition;
-    \item \texttt{test\_vector\_store}: Verified normalized FAISS indexing and vector retrieval latency;
-    \item \texttt{test\_hyde}: Verified hypothetical passage projection and dense embedding synthesis;
-    \item \texttt{test\_reranker}: Verified cross-encoder score calibration ($R_{CE} > 0.99$ for signal vs $R_{CE} < 0.10$ for distractors);
-    \item \texttt{test\_adaptive\_filter}: Verified dynamic threshold calculation and distractor pruning;
-    \item \texttt{test\_full\_pipeline}: Verified comparative execution of Baseline LongRAG vs E-LongRAG.
-\end{enumerate}
+An automated test suite in \texttt{tests/test\_modules.py} verifies all submodules end-to-end. All 7 unit tests pass with 100\% success rate, rigorously validating multi-hop dataset loading, 4k chunking and paragraph slicing, FAISS retrieval latency, HyDE expansion, cross-encoder score calibration ($R_{CE} > 0.99$ for signal vs $<0.10$ for distractors), dynamic thresholding, and end-to-end pipeline execution.
 
 \subsection{Empirical Ablation Benchmarking Results}
 We evaluated E-LongRAG across 25 multi-hop benchmark technical queries. Table~\ref{tab:ablation} reports the empirical ablation results comparing each architectural stage.
@@ -215,12 +203,12 @@ A 15-slide LaTeX Beamer presentation (\texttt{midsem\_presentation.pdf}) was com
 To advance from our current 50\% milestone to the completed endsem project, we will implement six major concrete features and empirical ablation studies:
 
 \subsection{1. Ablation of Embedding Architectures}
-Currently, dense retrieval relies on \texttt{all-MiniLM-L6-v2}. We will implement and benchmark four distinct representation paradigms:
+Currently, dense retrieval relies on \texttt{all-MiniLM-L6-v2}~\cite{sbert}. We will implement and benchmark four distinct representation paradigms:
 \begin{enumerate}
-    \item \textbf{State-of-the-Art Dense Bi-Encoders:} Benchmark \texttt{BAAI/bge-large-en-v1.5} ($1024$-dimensional) and \texttt{text-embedding-3-small} against the baseline MiniLM ($384$-dimensional).
-    \item \textbf{Sparse Lexical Retrieval (BM25):} Implement inverted index BM25 scoring to assess keyword recall under severe terminology shifts.
-    \item \textbf{Learned Sparse Representations (SPLADE):} Deploy SPLADE to capture term expansions without dense embedding bottlenecking.
-    \item \textbf{Multi-Vector Late Interaction (ColBERTv2):} Implement token-level MaxSim operations across long chunks:
+    \item \textbf{State-of-the-Art Dense Bi-Encoders:} Benchmark \texttt{BAAI/bge-large-en-v1.5} ($1024$-dimensional) and OpenAI \texttt{text-embedding-3-small} against the baseline MiniLM ($384$-dimensional).
+    \item \textbf{Sparse Lexical Retrieval (BM25):} Implement inverted index BM25 scoring~\cite{bm25} to assess keyword recall under severe terminology shifts.
+    \item \textbf{Learned Sparse Representations (SPLADE):} Deploy SPLADE~\cite{splade} to capture term expansions without dense embedding bottlenecking.
+    \item \textbf{Multi-Vector Late Interaction (ColBERTv2):} Implement token-level MaxSim operations across long chunks using ColBERTv2~\cite{colbert}:
     \begin{equation}
     S(Q, D) = \sum_{i \in Q} \max_{j \in D} E_i(q) \cdot E_j(d)^T
     \end{equation}
@@ -244,32 +232,13 @@ We will evaluate four distinct filtering and sampling strategies for paragraph s
 \end{enumerate}
 
 \subsection{3. Positional ``Lost-in-the-Middle'' Stress Testing}
-To quantify reader degradation, we will construct synthetic 10,000-token stress contexts where the target evidence passage is systematically placed at:
-\begin{itemize}
-    \item Position 0\% (Prompt Head)
-    \item Position 25\% (First Quarter)
-    \item Position 50\% (Prompt Center --- theoretical maximum attention decay)
-    \item Position 75\% (Third Quarter)
-    \item Position 100\% (Prompt Tail)
-\end{itemize}
-We will plot reader QA accuracy as a function of target position, empirically demonstrating that E-LongRAG achieves position-invariant accuracy by filtering out the distracting middle bulk.
+To quantify reader degradation, we will construct synthetic 10,000-token stress contexts where the target evidence passage is systematically placed at five canonical locations: 0\% (head), 25\% (first quarter), 50\% (center --- theoretical maximum attention decay), 75\% (third quarter), and 100\% (tail). We will plot reader QA accuracy as a function of target position, empirically demonstrating that E-LongRAG achieves position-invariant accuracy by filtering out the distracting middle bulk~\cite{lostinmiddle}.
 
 \subsection{4. Automated RAGAS LLM-as-a-Judge Evaluation}
-We will integrate the RAGAS framework (Es et al., 2023) using Gemini 1.5 Flash as an automated evaluator across:
-\begin{itemize}
-    \item \textbf{Faithfulness:} Fraction of generated claims directly grounded in retrieved context (quantifying hallucination elimination);
-    \item \textbf{Answer Relevance:} Semantic alignment between generated answer and ground-truth intent;
-    \item \textbf{Context Utilization:} Ratio of retrieved sentences actively utilized in the answer vs ignored noise.
-\end{itemize}
+We will integrate the RAGAS framework by Es \textit{et al.}~\cite{ragas} using Gemini 1.5 Flash as an automated evaluator across faithfulness (groundedness), answer relevance, and context utilization.
 
 \subsection{5. Cross-LLM Reader Generalization}
-We will evaluate the filtered E-LongRAG prompt across multiple open-weights and proprietary models:
-\begin{itemize}
-    \item Gemini 1.5 Flash (API)
-    \item LLaMA-3-8B-Instruct (Local / Hugging Face)
-    \item Qwen-2.5-7B-Instruct (vLLM)
-    \item Mistral-7B-Instruct-v0.3
-\end{itemize}
+We will evaluate the filtered E-LongRAG prompt across diverse open and proprietary model families: Gemini 1.5 Flash (API), LLaMA-3-8B-Instruct (local), Qwen-2.5-7B-Instruct (vLLM), and Mistral-7B-Instruct-v0.3.
 
 \subsection{6. Production REST API Deployment}
 The orchestrator will be packaged into a low-latency asynchronous FastAPI microservice with streaming token output and Prometheus latency instrumentation.
@@ -280,29 +249,37 @@ The 50\% midsem milestone of Efficient LongRAG (E-LongRAG) establishes that the 
 
 % -------------------------------------------------------------
 \begin{thebibliography}{10}
+\footnotesize
+\setlength{\itemsep}{1.0pt}
 \bibitem{longrag}
-Z.~Jiang, M.~Zhang, W.~Xiong, and W.~Chen, ``LongRAG: A Dual-Perspective Retrieval-Augmented Generation Framework for Long-Context LLMs,'' \textit{arXiv preprint arXiv:2410.18050}, 2024.
-
-\bibitem{hyde}
-L.~Gao, X.~Ma, J.~Lin, and J.~Callan, ``Precise Zero-Shot Dense Retrieval without Relevance Labels,'' \textit{arXiv preprint arXiv:2212.10496}, 2022.
-
-\bibitem{lostinmiddle}
-N.~F.~Liu, K.~Lin, J.~Hewitt, A.~Paranjape, M.~Bevilacqua, F.~Petroni, and P.~Liang, ``Lost in the Middle: How Language Models Use Long Contexts,'' \textit{Transactions of the Association for Computational Linguistics}, vol.~12, pp.~157--173, 2024.
-
-\bibitem{sbert}
-N.~Reimers and I.~Gurevych, ``Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,'' in \textit{Proc. of EMNLP-IJCNLP}, pp.~3982--3992, 2019.
-
-\bibitem{crossencoder}
-R.~Nogueira and K.~Cho, ``Passage Re-ranking with BERT,'' \textit{arXiv preprint arXiv:1901.04085}, 2019.
-
-\bibitem{ragas}
-S.~Es, J.~James, L.~Espinosa-Anke, and S.~Schockaert, ``RAGAS: Automated Evaluation of Retrieval Augmented Generation,'' in \textit{Proc. of EACL}, pp.~150--158, 2023.
-
-\bibitem{colbert}
-O.~Khattab and M.~Zaharia, ``ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction over BERT,'' in \textit{Proc. of ACM SIGIR}, pp.~39--48, 2020.
+Z.~Jiang, X.~Ma, and W.~Chen, ``LongRAG: Enhancing retrieval-augmented generation with long-context LLMs,'' \textit{arXiv preprint arXiv:2406.15319}, 2024.
 
 \bibitem{attention}
-A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N.~Gomez, L.~Kaiser, and I.~Polosukhin, ``Attention is All You Need,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol.~30, 2017.
+A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N.~Gomez, \L.~Kaiser, and I.~Polosukhin, ``Attention is all you need,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol.~30, pp.~5998--6008, 2017.
+
+\bibitem{lostinmiddle}
+N.~F.~Liu, K.~Lin, J.~Hewitt, A.~Paranjape, M.~Bevilacqua, F.~Petroni, and P.~Liang, ``Lost in the middle: How language models use long contexts,'' \textit{Transactions of the Association for Computational Linguistics}, vol.~12, pp.~157--173, 2024.
+
+\bibitem{hyde}
+L.~Gao, X.~Ma, J.~Lin, and J.~Callan, ``Precise zero-shot dense retrieval without relevance labels,'' in \textit{Proc. of the 61st Annual Meeting of the Association for Computational Linguistics (ACL)}, pp.~1762--1777, 2023.
+
+\bibitem{sbert}
+N.~Reimers and I.~Gurevych, ``Sentence-BERT: Sentence embeddings using Siamese BERT-networks,'' in \textit{Proc. of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)}, pp.~3982--3992, 2019.
+
+\bibitem{crossencoder}
+R.~Nogueira and K.~Cho, ``Passage re-ranking with BERT,'' \textit{arXiv preprint arXiv:1901.04085}, 2019.
+
+\bibitem{bm25}
+S.~Robertson and H.~Zaragoza, ``The probabilistic relevance framework: BM25 and beyond,'' \textit{Foundations and Trends in Information Retrieval}, vol.~3, no.~4, pp.~333--389, 2009.
+
+\bibitem{splade}
+T.~Formal, B.~Piwowarski, and S.~Clinchant, ``SPLADE: Sparse lexical and expansion model for first stage ranking,'' in \textit{Proc. of the 44th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)}, pp.~2288--2292, 2021.
+
+\bibitem{colbert}
+O.~Khattab and M.~Zaharia, ``ColBERT: Efficient and effective passage search via contextualized late interaction over BERT,'' in \textit{Proc. of the 43rd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)}, pp.~39--48, 2020.
+
+\bibitem{ragas}
+S.~Es, J.~James, L.~Espinosa-Anke, and S.~Schockaert, ``RAGAS: Automated evaluation of retrieval augmented generation,'' in \textit{Proc. of the 18th Conference of the European Chapter of the Association for Computational Linguistics (EACL)}, pp.~150--158, 2024.
 \end{thebibliography}
 
 \end{document}
