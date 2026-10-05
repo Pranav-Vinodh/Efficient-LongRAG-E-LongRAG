@@ -18,6 +18,15 @@ Retrieval-Augmented Generation (RAG) paradigms face a fundamental trade-off:
 1. **HyDE Query Expansion**: Synthesizes a hypothetical answer document $\hat{d} \sim P(\cdot | q)$ to project short queries into dense document space.
 2. **Intra-Chunk Paragraph Slicing & MiniLM Reranker**: Slices 4k chunks into $200$--$350$ token units and applies full joint cross-attention scoring ($R_{CE}$) via `cross-encoder/ms-marco-MiniLM-L-6-v2`, bypassing the 512-token BERT length limit.
 3. **Query-Adaptive Context Filtering & Deduplication**: Dynamically calculates score cutoff $\tau(q) = \max(0.40, \mu_R - 0.5\sigma_R)$ and prunes redundant duplicate passages ($\delta = 0.85$).
+4. **Retrieval Sampling Strategies Suite**: Implements Deterministic Top-$K$, Nucleus Top-$p$, Boltzmann Stochastic Sampling, and Maximal Marginal Relevance (MMR) with intra-context diversity tracking.
+
+---
+
+## 📑 Midsem Evaluation Deliverables
+
+- **Mid-Semester Evaluation Slides (18 Slides, PDF)**: [**`proj-mid-eval.pdf`**](./proj-mid-eval.pdf) | [LaTeX Source](proj-mid-eval.tex)
+- **IEEE Midsem Project Report (5 Pages, PDF)**: [**`E-LongRAG_Midsem_Report.pdf`**](./E-LongRAG_Midsem_Report.pdf) | [LaTeX Source](reports/midsem_project_report/midsem_project_report.tex)
+- **Interactive Verification Dashboard**: `streamlit run app.py` (Tabs 1 to 5)
 
 ---
 
