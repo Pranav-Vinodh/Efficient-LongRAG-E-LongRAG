@@ -200,22 +200,22 @@ A 15-slide LaTeX Beamer presentation (\texttt{midsem\_presentation.pdf}) was com
 
 % -------------------------------------------------------------
 \section{What Will Be Implemented Later (Endsem Roadmap)}
-To advance from our current 50\% milestone to the completed endsem project, we will implement six major concrete features and empirical ablation studies:
+To advance from our current 50\% milestone to final delivery, we outline six concrete, lightweight feature enhancements designed specifically for low-compute environments (executable entirely on CPU or via zero-GPU free cloud APIs):
 
-\subsection{1. Ablation of Embedding Architectures}
-Currently, dense retrieval relies on \texttt{all-MiniLM-L6-v2}~\cite{sbert}. We will implement and benchmark four distinct representation paradigms:
+\subsection{1. Lightweight Embedding Ablation and Hybrid Search}
+Currently, dense retrieval relies on \texttt{all-MiniLM-L6-v2}~\cite{sbert}. We will evaluate three compute-efficient retrieval strategies:
 \begin{enumerate}
-    \item \textbf{State-of-the-Art Dense Bi-Encoders:} Benchmark \texttt{BAAI/bge-large-en-v1.5} ($1024$-dimensional) and OpenAI \texttt{text-embedding-3-small} against the baseline MiniLM ($384$-dimensional).
-    \item \textbf{Sparse Lexical Retrieval (BM25):} Implement inverted index BM25 scoring~\cite{bm25} to assess keyword recall under severe terminology shifts.
-    \item \textbf{Learned Sparse Representations (SPLADE):} Deploy SPLADE~\cite{splade} to capture term expansions without dense embedding bottlenecking.
-    \item \textbf{Multi-Vector Late Interaction (ColBERTv2):} Implement token-level MaxSim operations across long chunks using ColBERTv2~\cite{colbert}:
+    \item \textbf{Lightweight Dense Bi-Encoders:} Compare \texttt{all-MiniLM-L6-v2} (384-d, 80MB) against \texttt{BAAI/bge-small-en-v1.5}~\cite{bge} (384-d, 130MB, top-ranked lightweight MTEB model) and \texttt{paraphrase-MiniLM-L3-v2} (ultra-fast 3-layer CPU model).
+    \item \textbf{Sparse Lexical Search (BM25):} Implement pure-CPU inverted index BM25 scoring~\cite{bm25} to guarantee keyword recall under technical vocabulary mismatch.
+    \item \textbf{Hybrid Dense-Lexical Fusion:} Combine normalized dense cosine scores and BM25 scores via Reciprocal Rank Fusion (RRF)~\cite{rrf}:
     \begin{equation}
-    S(Q, D) = \sum_{i \in Q} \max_{j \in D} E_i(q) \cdot E_j(d)^T
+    \text{RRF}(d) = \sum_{m \in \{\text{dense}, \text{BM25}\}} \frac{1}{60 + \text{rank}_m(d)}
     \end{equation}
+    This requires zero GPU compute, executes in pure Python, and resolves dense retrieval failures on exact code/entity lookups.
 \end{enumerate}
 
 \subsection{2. Ablation of Retrieval Sampling Strategies}
-We will evaluate four distinct filtering and sampling strategies for paragraph selection from candidate set $C$:
+We will evaluate four distinct algebraic filtering and sampling strategies for paragraph selection from candidate set $C$, all computed on CPU in milliseconds:
 \begin{enumerate}
     \item \textbf{Deterministic Top-$K$:} Hard rank cutoff ($K \in \{1, 2, 3, 5\}$).
     \item \textbf{Nucleus (Top-$p$) Sampling:} Select the minimal subset of paragraphs whose cumulative normalized relevance probability exceeds threshold $p$:
@@ -234,14 +234,14 @@ We will evaluate four distinct filtering and sampling strategies for paragraph s
 \subsection{3. Positional ``Lost-in-the-Middle'' Stress Testing}
 To quantify reader degradation, we will construct synthetic 10,000-token stress contexts where the target evidence passage is systematically placed at five canonical locations: 0\% (head), 25\% (first quarter), 50\% (center --- theoretical maximum attention decay), 75\% (third quarter), and 100\% (tail). We will plot reader QA accuracy as a function of target position, empirically demonstrating that E-LongRAG achieves position-invariant accuracy by filtering out the distracting middle bulk~\cite{lostinmiddle}.
 
-\subsection{4. Automated RAGAS LLM-as-a-Judge Evaluation}
-We will integrate the RAGAS framework by Es \textit{et al.}~\cite{ragas} using Gemini 1.5 Flash as an automated evaluator across faithfulness (groundedness), answer relevance, and context utilization.
+\subsection{4. Automated RAGAS and Exact-Match Evaluation}
+We will integrate the RAGAS framework by Es \textit{et al.}~\cite{ragas} using the free Gemini 1.5 Flash API as an automated evaluator across faithfulness, answer relevance, and context utilization, complemented by deterministic string Exact Match (EM) and token F1 metrics requiring zero GPU compute.
 
-\subsection{5. Cross-LLM Reader Generalization}
-We will evaluate the filtered E-LongRAG prompt across diverse open and proprietary model families: Gemini 1.5 Flash (API), LLaMA-3-8B-Instruct (local), Qwen-2.5-7B-Instruct (vLLM), and Mistral-7B-Instruct-v0.3.
+\subsection{5. Cross-Reader Evaluation via Zero-GPU Cloud APIs}
+Rather than requiring local high-VRAM GPU hardware, reader evaluation will leverage zero-GPU free cloud endpoints: Google Gemini 1.5 Flash (free API tier), Groq Cloud API (free LLaMA-3.1-8B-Instant), and a lightweight local CPU baseline (\texttt{google/flan-t5-base}, 248M parameters, $<500\text{ ms}$ on CPU).
 
-\subsection{6. Production REST API Deployment}
-The orchestrator will be packaged into a low-latency asynchronous FastAPI microservice with streaming token output and Prometheus latency instrumentation.
+\subsection{6. Cross-Encoder Model Sizing and Sensitivity Analysis}
+We will evaluate ultra-lightweight cross-encoders on CPU: \texttt{ms-marco-TinyBERT-L-2-v2} (4.4M parameters, $10\times$ faster on CPU) vs \texttt{ms-marco-MiniLM-L-6-v2} (22M parameters), and sweep dynamic cutoff multiplier $\alpha \in [0.0, 1.5]$ and deduplication threshold $\delta \in [0.70, 0.95]$ to map the Pareto efficiency frontier of token compression vs answer recall.
 
 % -------------------------------------------------------------
 \section{Conclusion}
@@ -272,11 +272,11 @@ R.~Nogueira and K.~Cho, ``Passage re-ranking with BERT,'' \textit{arXiv preprint
 \bibitem{bm25}
 S.~Robertson and H.~Zaragoza, ``The probabilistic relevance framework: BM25 and beyond,'' \textit{Foundations and Trends in Information Retrieval}, vol.~3, no.~4, pp.~333--389, 2009.
 
-\bibitem{splade}
-T.~Formal, B.~Piwowarski, and S.~Clinchant, ``SPLADE: Sparse lexical and expansion model for first stage ranking,'' in \textit{Proc. of the 44th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)}, pp.~2288--2292, 2021.
+\bibitem{rrf}
+G.~V.~Cormack, C.~L.~A.~Clarke, and S.~B\"{u}ttcher, ``Reciprocal rank fusion outperforms condorcet and individual rank learning methods,'' in \textit{Proc. of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)}, pp.~758--759, 2009.
 
-\bibitem{colbert}
-O.~Khattab and M.~Zaharia, ``ColBERT: Efficient and effective passage search via contextualized late interaction over BERT,'' in \textit{Proc. of the 43rd International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)}, pp.~39--48, 2020.
+\bibitem{bge}
+S.~Xiao, Z.~Liu, P.~Zhang, and N.~Muennighoff, ``C-Pack: Packaged resources to advance general Chinese and English bilingual retrieval,'' \textit{arXiv preprint arXiv:2309.07597}, 2023.
 
 \bibitem{ragas}
 S.~Es, J.~James, L.~Espinosa-Anke, and S.~Schockaert, ``RAGAS: Automated evaluation of retrieval augmented generation,'' in \textit{Proc. of the 18th Conference of the European Chapter of the Association for Computational Linguistics (EACL)}, pp.~150--158, 2024.
