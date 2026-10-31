@@ -222,3 +222,4 @@ class HybridRetriever:
                 "total": total_lat
             }
         }
+

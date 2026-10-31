@@ -204,3 +204,4 @@ class MultiReaderEngine:
         r_gemini = self.generate_gemini(query, context)
         r_groq = self.generate_groq(query, context)
         return [r_local, r_gemini, r_groq]
+
