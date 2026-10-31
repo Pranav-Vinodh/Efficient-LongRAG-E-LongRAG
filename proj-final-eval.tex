@@ -16,6 +16,7 @@
 \definecolor{secondaryblue}{RGB}{37, 99, 235}
 \definecolor{accentgreen}{RGB}{22, 163, 74}
 \definecolor{accentred}{RGB}{220, 38, 38}
+\definecolor{accentorange}{RGB}{234, 88, 12}
 \definecolor{accentpurple}{RGB}{126, 34, 206}
 \definecolor{codebg}{RGB}{248, 250, 252}
 \definecolor{codeborder}{RGB}{203, 213, 225}
@@ -32,7 +33,7 @@
 \title[E-LongRAG: Final Evaluation]{\textbf{Efficient LongRAG (E-LongRAG)}}
 \subtitle{Adaptive Context Filtering, Neural Reranking, Hybrid Search \& Robust Multi-Metric Evaluation}
 \author[Pranav, Pavan, Sameer]{\textbf{Pranav Vinodh} \and \textbf{Durga Sai Pavan Gangabattula} \and \textbf{Sameer}}
-\institute[Course: Large Language Models]{\textbf{Course: Large Language Models (IT 488) --- Final Endsemester Evaluation} \\ Department of Information Technology, NITK Surathkal}
+\institute[Course: Large Language Models]{\textbf{Course: Large Language Models (IT 488) --- Final Endsemester Evaluation} \\ Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal}
 \date[\today]{\today}
 
 \begin{document}
@@ -45,16 +46,55 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 2: Problem Motivation: The Long-Context RAG Dilemma
+% Slide 2: Executive Presentation Roadmap
 % ---------------------------------------------------------
-\begin{frame}{Problem Motivation: The Long-Context RAG Dilemma}
+\begin{frame}{Executive Presentation Roadmap}
+    \begin{columns}[onlytextwidth,T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Part 1: Foundations \& Midsem Architecture}}
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{Problem Motivation}: Short-Chunk Fragmentation vs. LongRAG Prompt Bloat.
+                    \item \textbf{LongRAG Bottlenecks}: $O(N^2)$ TTFT Attention Latency and $94\%$ Distractor Noise.
+                    \item \textbf{Midsem Pipeline}: HyDE Query Expansion, Intra-Chunk Paragraph Slicing, MiniLM Joint Cross-Attention Reranking.
+                    \item \textbf{Adaptive Context Filtering}: Dynamic Score Cutoff $\tau(q)$ and Cosine Deduplication $\delta=0.85$.
+                    \item \textbf{Midsem Empirical Results}: $94.9\%$ Prompt Compression and $19.7\times$ Pre-fill Speedup.
+                \end{itemize}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Part 2: New Endsem Innovations \& Novelty}}
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{Innovation 1}: Retrieval Sampling Strategies Ablation \& Intra-Context Diversity Metric $\text{Div}(\mathcal{S})$.
+                    \item \textbf{Innovation 2}: Lightweight Embedding Ablation \& Hybrid BM25+RRF Lexical-Dense Search.
+                    \item \textbf{Innovation 3}: Positional ``Lost-in-the-Middle'' Stress Testing (10k Tokens, U-Curve vs Invariance).
+                    \item \textbf{Innovation 4}: Automated RAGAS Quality Metrics, Exact Match (EM) \& Token F1.
+                    \item \textbf{Innovation 5}: Cross-Encoder Sizing \& 42-Point Pareto Sensitivity Frontier.
+                    \item \textbf{Innovation 6}: Multi-Reader Engine (CPU vs Gemini vs Groq) \& 10-Tab Web Dashboard.
+                    \item \textbf{Equal Team Contributions} across all 3 members.
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =========================================================
+% PART 1: WORK COMPLETED TILL MIDSEM
+% =========================================================
+\section{Part 1: Work Completed Till Midsem}
+
+% ---------------------------------------------------------
+% Slide 3: Problem Motivation: The Long-Context RAG Dilemma
+% ---------------------------------------------------------
+\begin{frame}{Part 1: Problem Motivation --- The Long-Context RAG Dilemma}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Short-Chunk RAG ($100$--$500$ tokens)}}
                 \begin{itemize}\setlength\itemsep{3pt}
                     \item Fragments cross-sentence entity relations.
-                    \item Fails on multi-hop questions requiring joint reasoning across distinct paragraphs.
-                    \item Boundary loss destroys narrative flow.
+                    \item Fails on multi-hop questions requiring joint reasoning across distinct sections.
+                    \item Boundary loss destroys narrative continuity.
+                    \item Multi-hop recall drops below $60\%$.
                 \end{itemize}
             \end{block}
         \end{column}
@@ -62,41 +102,41 @@
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Baseline LongRAG ($\approx 4,000$ tokens)}}
                 \begin{itemize}\setlength\itemsep{3pt}
-                    \item Preserves full multi-document narrative.
-                    \item \textbf{Prompt Bloat}: Exceeds $5,000$--$10,000$ tokens.
-                    \item \textbf{Distractor Noise}: $>90\%$ tokens irrelevant.
-                    \item \textbf{Lost-in-the-Middle}: LLMs miss buried facts.
+                    \item Preserves full multi-document narrative flow.
+                    \item \textbf{Severe Prompt Bloat}: Prompts exceed $5,000+$ tokens.
+                    \item \textbf{Massive Distractor Noise}: $>90\%$ of retrieved tokens are irrelevant to query $q$.
+                    \item \textbf{Cognitive Context Dilution}: Dilutes reader focus.
                 \end{itemize}
             \end{block}
         \end{column}
     \end{columns}
     
-    \vspace{0.25cm}
-    \begin{alertblock}{\textbf{Core Research Objective}}
+    \vspace{0.2cm}
+    \begin{alertblock}{\textbf{Core Architectural Tension}}
         \centering
-        \textit{Retain LongRAG's coarse retrieval recall while adaptively pruning distractor noise, resolving the lost-in-the-middle degradation, and achieving 19$\times$ TTFT speedup with zero GPU dependence.}
+        \textit{Short chunks sacrifice retrieval recall; coarse long chunks sacrifice reader computational efficiency and factual precision.}
     \end{alertblock}
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 3: Baseline LongRAG Framework & Architectural Bottlenecks
+% Slide 4: Baseline LongRAG Framework & Paper Bottlenecks
 % ---------------------------------------------------------
-\begin{frame}{The Baseline LongRAG Framework (\textit{Jiang et al., 2024})}
+\begin{frame}{Part 1: Baseline LongRAG Framework (\textit{Jiang et al., 2024})}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.50\textwidth}
             \textbf{Baseline Architecture}:
             \begin{itemize}\setlength\itemsep{3pt}
                 \item Coarse Chunks: $2,000$--$4,000$ tokens per unit.
                 \item Dense Bi-Encoder Index (\texttt{IndexFlatIP}).
-                \item Unfiltered prompt concatenation fed into LLM.
+                \item Raw retrieved chunks concatenated directly into LLM reader prompt.
             \end{itemize}
             
             \vspace{0.15cm}
             \textbf{Severe Computational Costs}:
             \begin{itemize}\setlength\itemsep{2pt}
-                \item Attention Pre-fill: $O(N^2)$ Time-To-First-Token.
-                \item Latency: $\approx 2,000\text{ ms}$ on 5k prompts.
-                \item Context Precision: Only \textbf{24.1\%} signal!
+                \item \textbf{Attention Pre-fill}: Scales with $O(N^2)$ sequence length.
+                \item \textbf{TTFT Latency}: $\approx 2,000\text{ ms}$ on 5k-token prompts.
+                \item \textbf{Context Precision}: Only \textbf{24.1\%} signal!
             \end{itemize}
         \end{column}
         
@@ -108,9 +148,9 @@
                     \toprule
                     \textbf{Document Depth} & \textbf{Baseline Recall} \\
                     \midrule
-                    $0\%$ (Prompt Head) & $84.5\%$ (High Attn) \\
-                    $\mathbf{50\%}$ \textbf{(Prompt Center)} & $\mathbf{35.2\%}$ \textbf{(Collapse)} \\
-                    $100\%$ (Prompt Tail) & $78.0\%$ (Recency) \\
+                    $0\%$ (Prompt Head) & $84.5\%$ (High Recency) \\
+                    $\mathbf{50\%}$ \textbf{(Prompt Center)} & $\mathbf{35.2\%}$ \textbf{(Severe Collapse)} \\
+                    $100\%$ (Prompt Tail) & $78.0\%$ (Recency Sink) \\
                     \bottomrule
                 \end{tabular}
             \end{alertblock}
@@ -124,9 +164,9 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 4: Proposed E-LongRAG Architecture
+% Slide 5: Midsem Core Methodology: End-to-End Flowchart
 % ---------------------------------------------------------
-\begin{frame}{Proposed E-LongRAG Architecture}
+\begin{frame}{Part 1: Midsem Architecture --- Hierarchical Slicing \& Filtering}
     \centering
     \begin{tikzpicture}[
         scale=0.92, every node/.style={transform shape},
@@ -141,17 +181,17 @@
         % Row 1
         \node (q) [query] at (0, 0) {\textbf{User Query $q$}\\(Multi-Hop QA)};
         \node (hyde) [process] at (4.0, 0) {\textbf{1. HyDE Expansion}\\$\hat{d} \sim P_{\text{LM}}(\cdot \mid q)$};
-        \node (faiss) [process] at (8.0, 0) {\textbf{2. Hybrid FAISS+BM25}\\Dense + BM25 (RRF)};
+        \node (faiss) [process] at (8.0, 0) {\textbf{2. FAISS Dense Index}\\Coarse Long Chunks};
         \node (slice) [filter] at (12.0, 0) {\textbf{3. Paragraph Slicer}\\($200$--$350$ tokens)};
 
         % Row 2
         \node (rerank) [filter] at (12.0, -2.4) {\textbf{4. MiniLM Reranker}\\Cross-Encoder $R_{CE}$};
         \node (adapt) [filter] at (8.0, -2.4) {\textbf{5. Dynamic Filter}\\$\tau(q) = \mu_R - \alpha \sigma_R$};
         \node (dedup) [filter] at (4.0, -2.4) {\textbf{6. Cosine Dedup}\\$\text{Sim} < 0.85$};
-        \node (llm) [output] at (0, -2.4) {\textbf{Multi-Reader}\\$\approx 260$ tokens ($95\%$ less)};
+        \node (llm) [output] at (0, -2.4) {\textbf{Compact Context}\\$\approx 260$ tok ($95\%$ less)};
 
-        \draw [arrow] (q) -- node[lbl] {Query} (hyde);
-        \draw [arrow] (hyde) -- node[lbl] {RRF Score} (faiss);
+        \draw [arrow] (q) -- node[lbl] {Raw Query} (hyde);
+        \draw [arrow] (hyde) -- node[lbl] {Dense Vector} (faiss);
         \draw [arrow] (faiss) -- node[lbl] {4k Chunks} (slice);
         \draw [arrow] (slice) -- node[lbl, right=3pt] {Paragraphs} (rerank);
         \draw [arrow] (rerank) -- node[lbl] {Scores $R_{CE}$} (adapt);
@@ -161,20 +201,20 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 5: Mathematical Foundations
+% Slide 6: Mathematical Formulations (Midsem)
 % ---------------------------------------------------------
-\begin{frame}{Mathematical Foundations: HyDE, Slicing \& Cross-Attention}
+\begin{frame}{Part 1: Mathematical Formulations --- Slicing \& Cross-Attention}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{HyDE Query Expansion}}
                 Synthesize hypothetical passage $\hat{d} \sim P_{\text{LM}}(\cdot \mid q)$:
-                $$v_{\text{search}} = \frac{E(\hat{d})}{\|E(\hat{d})\|_2}$$
+                $$v_{\text{search}} = \frac{E(\hat{d})}{\|E(\hat{d})\|_2} \in \mathbb{R}^{384}$$
                 Eliminates vocabulary mismatch before FAISS search.
             \end{block}
 
             \begin{block}{\textbf{Intra-Chunk Paragraph Slicing}}
                 Decouples 4k retrieval units into reranking units:
-                $$c_k \longrightarrow \{ p_{k,1}, p_{k,2}, \dots, p_{k,m} \}$$
+                $$c_k \longrightarrow \{ p_{k,1}, p_{k,2}, \dots, p_{k,m_k} \}$$
                 Bypasses the strict 512-token BERT length bottleneck.
             \end{block}
         \end{column}
@@ -192,9 +232,9 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 6: Adaptive Thresholding & Semantic Cosine Deduplication
+% Slide 7: Adaptive Thresholding & Deduplication (Midsem)
 % ---------------------------------------------------------
-\begin{frame}{Adaptive Dynamic Thresholding \& Semantic Deduplication}
+\begin{frame}{Part 1: Adaptive Score Thresholding \& Semantic Deduplication}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Query-Adaptive Score Cutoff $\tau(q)$}}
@@ -224,43 +264,9 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 7: Retrieval Sampling Strategies Ablation
+% Slide 8: Midsem Core Empirical Benchmarks
 % ---------------------------------------------------------
-\begin{frame}{Retrieval Sampling Strategies Ablation Suite}
-    \begin{table}[!t]
-    \centering
-    \scriptsize
-    \begin{tabular}{lccccc}
-    \toprule
-    \textbf{Sampling Strategy} & \textbf{Passages} & \textbf{Tokens} & \textbf{Savings} & \textbf{Diversity $\text{Div}(\mathcal{S})$} & \textbf{Latency} \\
-    \midrule
-    Deterministic Top-$K$ ($K=2$) & $2$ & $590$ & $72.8\%$ & $0.1925$ & $0.01\text{ ms}$ \\
-    Nucleus Top-$p$ ($p=0.85$) & $4$ & $1,962$ & $10.0\%$ & $0.4888$ & $0.07\text{ ms}$ \\
-    Boltzmann ($T=0.5, K=2$) & $2$ & $487$ & $77.6\%$ & $0.7902$ & $0.74\text{ ms}$ \\
-    MMR ($\lambda=0.7, K=2$) & $2$ & $590$ & $72.8\%$ & $0.2850$ & $294.35\text{ ms}$ \\
-    \textbf{Adaptive Filter (Proposed)} & $\mathbf{2}$ & $\mathbf{260.8}$ & $\mathbf{94.9\%}$ & $\mathbf{0.3078}$ & $\mathbf{50.30\text{ ms}}$ \\
-    \bottomrule
-    \end{tabular}
-    \end{table}
-
-    \begin{columns}[onlytextwidth,T]
-        \begin{column}{0.48\textwidth}
-            \begin{block}{\textbf{Intra-Context Diversity Metric}}
-                $$\text{Div}(\mathcal{S}) = \frac{1}{|\mathcal{S}|(|\mathcal{S}|-1)} \sum_{i \ne j} \left( 1 - \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2} \right)$$
-            \end{block}
-        \end{column}
-        \begin{column}{0.48\textwidth}
-            \begin{block}{\textbf{Key Finding}}
-                Deterministic Top-$K$ suffers low diversity ($0.1925$) due to duplicate passages. Adaptive Filter provides optimal compression ($94.9\%$) with robust diversity.
-            \end{block}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% ---------------------------------------------------------
-% Slide 8: Empirical Core Ablation Results
-% ---------------------------------------------------------
-\begin{frame}{Empirical Core Ablation Results (25 Multi-Hop Queries)}
+\begin{frame}{Part 1: Midsem Core Empirical Benchmarks (25 Multi-Hop Queries)}
     \begin{table}[!t]
     \centering
     \scriptsize
@@ -290,10 +296,80 @@
     \end{columns}
 \end{frame}
 
+% =========================================================
+% PART 2: NEW WORK COMPLETED FOR ENDSEM EVALUATION
+% =========================================================
+\section{Part 2: New Endsem Innovations \& Novelty}
+
 % ---------------------------------------------------------
-% Slide 9: Endsem Module 1: Hybrid Search & Embedding Ablation
+% Slide 9: Overview of Endsem Architectural Innovations
 % ---------------------------------------------------------
-\begin{frame}{Endsem Module 1: Hybrid Search (Dense + BM25 + RRF)}
+\begin{frame}{Part 2: Overview of Endsem Innovations \& Research Novelty}
+    \begin{columns}[onlytextwidth,T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{What We Built After Midsem}}
+                \begin{enumerate}\setlength\itemsep{3pt}
+                    \item \textbf{Sampling Ablations}: Top-K, Nucleus, Boltzmann, MMR vs Adaptive Filter.
+                    \item \textbf{Hybrid Search}: Pure-Python Okapi BM25 + FAISS + Reciprocal Rank Fusion (RRF $c=60$).
+                    \item \textbf{Positional Stress Test}: 10k-token Lost-in-the-Middle evaluation across 5 depths.
+                    \item \textbf{RAGAS Evaluation}: Faithfulness, Relevance, Precision, Recall, EM, Token F1.
+                    \item \textbf{Pareto Sensitivity Frontier}: 42-point 2D grid sweep ($\alpha \times \delta$).
+                    \item \textbf{Multi-Reader Engine}: Local CPU, Gemini 1.5, Groq LPUs.
+                \end{enumerate}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\textbf{Core Research Novelty}}
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{Novelty 1}: Fusing lexical BM25 with dense vectors resolves neural retrieval failures on technical acronyms.
+                    \item \textbf{Novelty 2}: Formulated Intra-Context Diversity metric $\text{Div}(\mathcal{S})$ to quantify prompt redundancy.
+                    \item \textbf{Novelty 3}: \textbf{100\% Position Invariance} proven: E-LongRAG immunizes readers against lost-in-the-middle degradation.
+                    \item \textbf{Novelty 4}: Complete zero-GPU operability ($<400\text{ MB}$ RAM, sub-5ms local reader, 21/21 unit tests).
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------
+% Slide 10: Endsem Innovation 1: Retrieval Sampling Strategies Ablation
+% ---------------------------------------------------------
+\begin{frame}{Endsem Innovation 1: Retrieval Sampling Strategies Ablation Suite}
+    \begin{table}[!t]
+    \centering
+    \scriptsize
+    \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Sampling Strategy} & \textbf{Passages} & \textbf{Tokens} & \textbf{Savings} & \textbf{Diversity $\text{Div}(\mathcal{S})$} & \textbf{Latency} \\
+    \midrule
+    Deterministic Top-$K$ ($K=2$) & $2$ & $590$ & $72.8\%$ & $0.1925$ & $0.01\text{ ms}$ \\
+    Nucleus Top-$p$ ($p=0.85$) & $4$ & $1,962$ & $10.0\%$ & $0.4888$ & $0.07\text{ ms}$ \\
+    Boltzmann ($T=0.5, K=2$) & $2$ & $487$ & $77.6\%$ & $0.7902$ & $0.74\text{ ms}$ \\
+    MMR ($\lambda=0.7, K=2$) & $2$ & $590$ & $72.8\%$ & $0.2850$ & $294.35\text{ ms}$ \\
+    \textbf{Adaptive Filter (Proposed)} & $\mathbf{2}$ & $\mathbf{260.8}$ & $\mathbf{94.9\%}$ & $\mathbf{0.3078}$ & $\mathbf{50.30\text{ ms}}$ \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+
+    \begin{columns}[onlytextwidth,T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Intra-Context Diversity Formulation}}
+                $$\text{Div}(\mathcal{S}) = \frac{1}{|\mathcal{S}|(|\mathcal{S}|-1)} \sum_{i \ne j} \left( 1 - \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2} \right)$$
+            \end{block}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\textbf{Scientific Novelty}}
+                Proved deterministic Top-$K$ suffers from low diversity ($0.1925$) due to adjacent duplicate chunks, whereas our Adaptive Filter optimizes both compression ($94.9\%$) and diversity.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------
+% Slide 11: Endsem Innovation 2: Hybrid Search & Embedding Ablation
+% ---------------------------------------------------------
+\begin{frame}{Endsem Innovation 2: Hybrid Search (Dense + BM25 + RRF)}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Reciprocal Rank Fusion (RRF, $c=60$)}}
@@ -301,7 +377,7 @@
                 \begin{itemize}\setlength\itemsep{2pt}
                     \item Fuses FAISS Cosine and Okapi BM25 scores.
                     \item Sub-millisecond latency on host CPU ($2.31\text{ ms}$).
-                    \item Zero GPU requirement, 100\% pure Python.
+                    \item Pure Python / NumPy Robertson-Spärck Jones IDF.
                 \end{itemize}
             \end{block}
         \end{column}
@@ -321,15 +397,15 @@
                 \end{tabular}
             \end{block}
             \vspace{-0.1cm}
-            \scriptsize \textit{Takeaway}: BM25 serves as an ultra-fast zero-parameter safety net for alphanumeric technical terms.
+            \scriptsize \textbf{Novelty}: BM25 operates as a zero-parameter safety net, capturing rare alphanumeric codes where dense bi-encoders fail.
         \end{column}
     \end{columns}
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 10: Endsem Module 2: Positional Lost-in-the-Middle Stress Testing
+% Slide 12: Endsem Innovation 3: Positional Lost-in-the-Middle Stress Testing
 % ---------------------------------------------------------
-\begin{frame}{Endsem Module 2: Positional Lost-in-the-Middle Stress Testing}
+\begin{frame}{Endsem Innovation 3: Positional Lost-in-the-Middle Stress Testing}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.54\textwidth}
             \begin{block}{\textbf{Stress Testing across 10,000-Token Contexts}}
@@ -351,11 +427,11 @@
         \end{column}
         
         \begin{column}{0.44\textwidth}
-            \begin{alertblock}{\textbf{The Invariance Property}}
+            \begin{alertblock}{\textbf{Scientific Proof of Invariance}}
                 \begin{itemize}\setlength\itemsep{3pt}
                     \item \textbf{Baseline LongRAG}: Suffers catastrophic U-shaped attention collapse at 50\% depth ($35.2\%$ recall).
                     \item \textbf{E-LongRAG}: Achieves \textbf{100.0\% position-invariant recall} across all positions.
-                    \item \textit{Mechanism}: Cross-encoder evaluates paragraphs independently, immunizing the system against distractor depth.
+                    \item \textbf{Mechanism}: Hierarchical slicing decouples paragraphs; cross-encoder evaluates each independently of its position in the long context haystack.
                 \end{itemize}
             \end{alertblock}
         \end{column}
@@ -363,9 +439,9 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 11: Endsem Module 3: Automated RAGAS Quality Metrics
+% Slide 13: Endsem Innovation 4: Automated RAGAS Quality Metrics
 % ---------------------------------------------------------
-\begin{frame}{Endsem Module 3: Automated RAGAS Quality Metrics}
+\begin{frame}{Endsem Innovation 4: Automated RAGAS Quality Metrics}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.54\textwidth}
             \begin{table}[!t]
@@ -391,8 +467,8 @@
         \begin{column}{0.44\textwidth}
             \begin{block}{\textbf{Signal-to-Noise Breakthrough}}
                 \begin{itemize}\setlength\itemsep{3pt}
-                    \item Baseline Context Precision is only \textbf{0.241} because 94\% of tokens are irrelevant distractors.
-                    \item E-LongRAG boosts Precision to \textbf{0.942} (+291\%) while preserving 96\% Context Recall.
+                    \item Baseline Context Precision is only \textbf{0.241} because 94\% of prompt tokens are irrelevant distractors.
+                    \item E-LongRAG boosts Precision to \textbf{0.942} (+290.9\%) while preserving 96\% Context Recall.
                     \item Faithfulness reaches \textbf{0.980}, preventing hallucinated answers.
                 \end{itemize}
             \end{block}
@@ -401,9 +477,9 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 12: Endsem Module 4: Model Sizing & Sensitivity Pareto Frontier
+% Slide 14: Endsem Innovation 5: Model Sizing & Sensitivity Pareto Frontier
 % ---------------------------------------------------------
-\begin{frame}{Endsem Module 4: Cross-Encoder Sizing \& Pareto Frontier}
+\begin{frame}{Endsem Innovation 5: Cross-Encoder Sizing \& Pareto Frontier}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Cross-Encoder Sizing Table}}
@@ -450,9 +526,9 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 13: Endsem Module 5: Multi-Reader Benchmark
+% Slide 15: Endsem Innovation 6: Multi-Reader Engine Benchmarks
 % ---------------------------------------------------------
-\begin{frame}{Endsem Module 5: Multi-Reader Engine Benchmarks}
+\begin{frame}{Endsem Innovation 6: Multi-Reader Engine Benchmarks}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.54\textwidth}
             \begin{table}[!t]
@@ -487,12 +563,12 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 14: Interactive Web Dashboard (10 Real-Time Diagnostic Tabs)
+% Slide 16: Interactive Web Dashboard (10 Real-Time Diagnostic Tabs)
 % ---------------------------------------------------------
 \begin{frame}{Interactive Web Dashboard (\texttt{app.py}: 10 Diagnostic Tabs)}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
-            \begin{block}{\textbf{Tabs 1 to 5: Core Diagnostics}}
+            \begin{block}{\textbf{Tabs 1 to 5: Core Midsem Diagnostics}}
                 \scriptsize
                 \begin{itemize}\setlength\itemsep{1.5pt}
                     \item \textbf{Tab 1: Side-by-Side Comparison}: Baseline vs E-LongRAG output and tokens.
@@ -505,7 +581,7 @@
         \end{column}
         
         \begin{column}{0.48\textwidth}
-            \begin{block}{\textbf{Tabs 6 to 10: Endsem Modules}}
+            \begin{block}{\textbf{Tabs 6 to 10: Endsem Innovation Modules}}
                 \scriptsize
                 \begin{itemize}\setlength\itemsep{1.5pt}
                     \item \textbf{Tab 6: Hybrid Search}: BM25 + Dense RRF fusion and bi-encoder table.
@@ -520,7 +596,7 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 15: Engineering Verification & Zero-GPU Portability
+% Slide 17: Engineering Verification: 21/21 Unit Tests Passed
 % ---------------------------------------------------------
 \begin{frame}{Engineering Verification: 21/21 Unit Tests Passed}
     \begin{columns}[onlytextwidth,T]
@@ -566,43 +642,63 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 16: Individual Team Contributions
+% Slide 18: Detailed Team Member Contributions (Equally Divided)
 % ---------------------------------------------------------
-\begin{frame}{Individual Team Contributions}
+\begin{frame}{Individual Team Contributions (Equally Divided)}
     \begin{columns}[onlytextwidth,T]
-        \begin{column}{0.38\textwidth}
+        \begin{column}{0.32\textwidth}
             \begin{block}{\textbf{Pranav Vinodh}}
-                \scriptsize
-                \begin{itemize}\setlength\itemsep{1.5pt}
-                    \item \textbf{Sampling Ablation}: Formulated Top-$K$, Nucleus, Boltzmann, MMR (\texttt{sampling.py}).
-                    \item \textbf{Diversity Metric}: Pairwise cosine $\text{Div}(\mathcal{S})$ and token tracking engine.
-                    \item \textbf{Adaptive Context Filter}: Dynamic thresholding $\tau(q)$ and deduplication ($\delta$).
-                    \item \textbf{Streamlit UI}: 10 diagnostic tabs, real-time sliders, and Pareto visualization.
-                    \item \textbf{Pareto Sweeper}: Formulated 42-point sensitivity sweep (\texttt{sensitivity.py}).
+                \tiny
+                \textbf{Midsem Deliverables}:
+                \begin{itemize}\setlength\itemsep{1pt}
+                    \item Intra-chunk paragraph slicing pipeline.
+                    \item Dynamic statistical cutoff $\tau(q)$.
+                    \item Cosine deduplication threshold $\delta=0.85$.
+                \end{itemize}
+                \textbf{Endsem Deliverables}:
+                \begin{itemize}\setlength\itemsep{1pt}
+                    \item Retrieval Sampling Suite (Top-K, Nucleus, Boltzmann, MMR) in \texttt{sampling.py}.
+                    \item Intra-Context Diversity metric $\text{Div}(\mathcal{S})$.
+                    \item 42-point 2D Sensitivity Pareto Sweeper in \texttt{sensitivity.py}.
+                    \item 10-Tab Streamlit Dashboard in \texttt{app.py}.
                 \end{itemize}
             \end{block}
         \end{column}
         
-        \begin{column}{0.29\textwidth}
+        \begin{column}{0.32\textwidth}
             \begin{block}{\textbf{Durga Sai Pavan G.}}
-                \scriptsize
-                \begin{itemize}\setlength\itemsep{2pt}
-                    \item \textbf{HyDE Expansion}: Hypothetical passage projection (\texttt{src/hyde.py}).
-                    \item \textbf{Hybrid Search}: Pure-Python BM25 and RRF retriever (\texttt{src/hybrid\_search.py}).
-                    \item \textbf{Multi-Reader Engine}: CPU, Gemini, and Groq backends (\texttt{src/reader.py}).
-                    \item \textbf{Dataset Pipeline}: Ingested 50 academic multi-hop samples.
+                \tiny
+                \textbf{Midsem Deliverables}:
+                \begin{itemize}\setlength\itemsep{1pt}
+                    \item HyDE Query Expansion in \texttt{hyde.py}.
+                    \item Benchmark QA dataset curation and caching in \texttt{dataset\_loader.py}.
+                    \item Modular unit test architecture.
+                \end{itemize}
+                \textbf{Endsem Deliverables}:
+                \begin{itemize}\setlength\itemsep{1pt}
+                    \item Pure-Python Okapi BM25 index and Robertson-Spärck Jones IDF.
+                    \item Hybrid Dense-Lexical Search with RRF ($c=60$) in \texttt{hybrid\_search.py}.
+                    \item Multi-Reader Engine (CPU, Gemini, Groq) in \texttt{reader.py}.
+                    \item Unit tests for hybrid search and readers.
                 \end{itemize}
             \end{block}
         \end{column}
 
-        \begin{column}{0.29\textwidth}
+        \begin{column}{0.32\textwidth}
             \begin{block}{\textbf{Sameer}}
-                \scriptsize
-                \begin{itemize}\setlength\itemsep{2pt}
-                    \item \textbf{Vector Store Engine}: 4k chunking and FAISS indexing (\texttt{src/vector\_store.py}).
-                    \item \textbf{Stress Tester}: Positional Lost-in-the-Middle tester (\texttt{src/lost\_in\_the\_middle.py}).
-                    \item \textbf{RAGAS Evaluator}: Quality and Exact Match suite (\texttt{src/ragas\_eval.py}).
-                    \item \textbf{Model Sizing}: Cross-encoder and bi-encoder memory profiling.
+                \tiny
+                \textbf{Midsem Deliverables}:
+                \begin{itemize}\setlength\itemsep{1pt}
+                    \item Coarse 4k chunking in \texttt{chunker.py}.
+                    \item FAISS \texttt{IndexFlatIP} vector store in \texttt{vector\_store.py}.
+                    \item Core latency and token profiling.
+                \end{itemize}
+                \textbf{Endsem Deliverables}:
+                \begin{itemize}\setlength\itemsep{1pt}
+                    \item Positional ``Lost-in-the-Middle'' Stress Tester in \texttt{lost\_in\_the\_middle.py}.
+                    \item Automated RAGAS quality evaluator (EM, F1) in \texttt{ragas\_eval.py}.
+                    \item Bi-encoder footprint and cross-encoder model sizing ablation.
+                    \item Unit tests for stress testing and RAGAS.
                 \end{itemize}
             \end{block}
         \end{column}
@@ -610,16 +706,16 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 17: Conclusion & Summary
+% Slide 19: Conclusion & Key Findings
 % ---------------------------------------------------------
-\begin{frame}{Conclusion \& Summary}
+\begin{frame}{Conclusion \& Key Findings}
     \begin{block}{\textbf{Key Project Achievements}}
         \begin{enumerate}\setlength\itemsep{2pt}
-            \item \textbf{Resolved the Long-Context Dilemma}: Captures coarse document context while eliminating prompt bloat and lost-in-the-middle degradation.
-            \item \textbf{Superior Quantitative Performance}: Achieves \textbf{$94.9\%$ prompt token reduction}, \textbf{$19.7\times$ TTFT latency speedup}, and context precision boost from \textbf{$50.0\%$ to $94.2\%$}.
+            \item \textbf{Resolved the Long-Context Dilemma}: Retains coarse document narrative while eliminating prompt bloat and lost-in-the-middle degradation.
+            \item \textbf{Superior Quantitative Performance}: Achieves \textbf{$94.9\%$ prompt token reduction}, \textbf{$19.7\times$ TTFT latency speedup}, and context precision boost from \textbf{$24.1\%$ to $94.2\%$}.
             \item \textbf{100\% Position-Invariant Recall}: Completely immune to lost-in-the-middle attention decay across 10k-token contexts.
             \item \textbf{Full Zero-GPU Operability}: Executes in milliseconds on CPU with zero cloud dependencies.
-            \item \textbf{Production-Grade Verification}: 21/21 passing unit tests, comprehensive 6-page IEEE report, and an interactive 10-tab Streamlit dashboard.
+            \item \textbf{Production-Grade Verification}: 21/21 passing unit tests, comprehensive 8-page IEEE report, and an interactive 10-tab Streamlit dashboard.
         \end{enumerate}
     \end{block}
     
@@ -632,7 +728,7 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 18: References
+% Slide 20: References
 % ---------------------------------------------------------
 \begin{frame}{Key References}
     \scriptsize

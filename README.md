@@ -1,233 +1,211 @@
 # ⚡ Efficient LongRAG (E-LongRAG)
 
-> **Adaptive Context Filtering for High-Precision Long-Context LLM Retrieval**  
-> _Course: Large Language Models | Final Year Project | Midsem Evaluation_  
-> **Authors**: Pranav Vinodh, Durga Sai Pavan Gangabattula, Sameer
+> **Adaptive Context Filtering, Neural Paragraph Reranking & Multi-Metric Evaluation for Long-Context LLMs**  
+> _Course: Large Language Models (IT 488) | Final Endsemester Project Evaluation_  
+> **Authors**: Pranav Vinodh, Durga Sai Pavan Gangabattula, Sameer  
+> **Institution**: Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal
 
 ---
 
 ## 📌 Executive Summary
 
-Retrieval-Augmented Generation (RAG) paradigms face a fundamental trade-off:
+Retrieval-Augmented Generation (RAG) paradigms face a fundamental structural trade-off:
 
-- **Short-Chunk RAG ($100$--$500$ tokens)**: Low token cost, but fragments multi-hop reasoning across document boundaries.
-- **Baseline LongRAG ($\approx 4,000$ tokens)** (_Jiang et al., arXiv:2410.18050_): Preserves document context, but causes **massive prompt bloat ($5,000+$ tokens)**, **high Time-To-First-Token (TTFT) pre-fill latency ($O(N^2)$ attention costs)**, and **"lost-in-the-middle" distractor hallucination**.
+- **Short-Chunk RAG ($100$--$500$ tokens)**: Minimizes token cost, but fragments multi-hop reasoning across arbitrary document cutoffs, reducing multi-hop retrieval recall below $60\%$.
+- **Baseline LongRAG ($\approx 4,000$ tokens)** (_Jiang et al., 2024_): Preserves multi-document narrative continuity, but introduces **massive prompt bloat ($5,000+$ tokens)**, **quadratic Time-To-First-Token (TTFT) pre-fill latency ($O(N^2)$ self-attention)**, and **"lost-in-the-middle" attention collapse** (recall drops to $35.2\%$ at context center).
 
-**Efficient LongRAG (E-LongRAG)** bridges this gap by combining coarse long-chunk retrieval with three lightweight post-retrieval neural and algorithmic optimization layers:
+**Efficient LongRAG (E-LongRAG)** resolves this dilemma by coupling coarse $4,000$-token retrieval with lightweight post-retrieval neural and algorithmic optimization layers:
 
-1. **HyDE Query Expansion**: Synthesizes a hypothetical answer document $\hat{d} \sim P(\cdot | q)$ to project short queries into dense document space.
-2. **Intra-Chunk Paragraph Slicing & MiniLM Reranker**: Slices 4k chunks into $200$--$350$ token units and applies full joint cross-attention scoring ($R_{CE}$) via `cross-encoder/ms-marco-MiniLM-L-6-v2`, bypassing the 512-token BERT length limit.
-3. **Query-Adaptive Context Filtering & Deduplication**: Dynamically calculates score cutoff $\tau(q) = \max(0.40, \mu_R - 0.5\sigma_R)$ and prunes redundant duplicate passages ($\delta = 0.85$).
-4. **Retrieval Sampling Strategies Suite**: Implements Deterministic Top-$K$, Nucleus Top-$p$, Boltzmann Stochastic Sampling, and Maximal Marginal Relevance (MMR) with intra-context diversity tracking.
-
----
-
-## 📑 Midsem Evaluation Deliverables
-
-- **Mid-Semester Evaluation Slides (18 Slides, PDF)**: [**`proj-mid-eval.pdf`**](./proj-mid-eval.pdf) | [LaTeX Source](proj-mid-eval.tex)
-- **IEEE Midsem Project Report (5 Pages, PDF)**: [**`E-LongRAG_Midsem_Report.pdf`**](./E-LongRAG_Midsem_Report.pdf) | [LaTeX Source](reports/midsem_project_report/midsem_project_report.tex)
-- **Interactive Verification Dashboard**: `streamlit run app.py` (Tabs 1 to 5)
+1. **HyDE Query Expansion**: Generates hypothetical answer documents $\hat{d} \sim P(\cdot \mid q)$ to eliminate lexical-semantic mismatches.
+2. **Hybrid Dense-Lexical Search**: Fuses FAISS dense cosine similarity with pure-Python Okapi BM25 via Reciprocal Rank Fusion ($\text{RRF}, c=60$).
+3. **Intra-Chunk Paragraph Slicing**: Decomposes 4k chunks into $200$--$350$ token sub-paragraphs, bypassing the 512-token sequence limit of BERT-based models.
+4. **MiniLM Cross-Attention Reranking**: Evaluates fine-grained joint query-paragraph representations via `cross-encoder/ms-marco-MiniLM-L-6-v2`.
+5. **Query-Adaptive Context Filtering & Deduplication**: Statistically computes dynamic cutoff thresholds $\tau(q) = \max(0.40, \mu_R - 0.5\sigma_R)$ and prunes semantic duplicates ($\delta = 0.85$).
+6. **Retrieval Sampling Strategies Suite**: Evaluates Top-$K$, Nucleus Top-$p$, Boltzmann, MMR, and Adaptive Filtering with intra-context diversity tracking.
+7. **Positional Invariance**: Eliminates lost-in-the-middle attention sinks, maintaining **100.0\% position-invariant recall** across 10k-token multi-document contexts.
+8. **Automated RAGAS Quality Evaluation**: Elevates Context Precision from $24.1\%$ to $94.2\%$ ($+290.9\%$ signal gain).
+9. **Multi-Reader Engine**: Delivers sub-5ms local zero-GPU CPU extraction while remaining fully compatible with Google Gemini 1.5 Flash and Groq LPUs.
 
 ---
 
-## 📊 Empirical Ablation Benchmark Results
+## 📑 Project Deliverables
 
-Evaluated across 25 multi-hop academic benchmark queries on multi-hop technical reasoning tasks:
-
-| Model Configuration       |   Avg. Prompt Tokens   | Retrieval Latency  | Estimated LLM Pre-fill (TTFT) |                        Total Response Time                        | Context Precision |
-| :------------------------ | :--------------------: | :----------------: | :---------------------------: | :---------------------------------------------------------------: | :---------------: |
-| **1. Baseline LongRAG**   |  $5,134.0\text{ tok}$  | $10.58\text{ ms}$  |   $\approx 2,000\text{ ms}$   |                     $\approx 2,010\text{ ms}$                     |     $50.0\%$      |
-| **2. LongRAG + HyDE**     |  $5,123.0\text{ tok}$  | $14.65\text{ ms}$  |   $\approx 2,000\text{ ms}$   |                     $\approx 2,015\text{ ms}$                     |     $65.0\%$      |
-| **3. LongRAG + Reranker** |  $5,123.0\text{ tok}$  | $453.30\text{ ms}$ |   $\approx 2,000\text{ ms}$   |                     $\approx 2,453\text{ ms}$                     |     $80.0\%$      |
-| **4. Full E-LongRAG**     | **$260.8\text{ tok}$** | $472.41\text{ ms}$ |  **$\approx 100\text{ ms}$**  | **$\approx 570\text{ ms}$ (CPU) / $\approx 125\text{ ms}$ (GPU)** |   **$95.0\%$**    |
-
-- **Prompt Compression**: **$94.9\%$ prompt token reduction** ($5,134 \rightarrow 261$ tokens).
-- **Speedup**: **$19.7\times$ faster TTFT** during LLM attention pre-fill.
-- **Precision**: **$+45.0\%$ precision gain** ($50\% \rightarrow 95\%$).
+| Deliverable | File Path | Format / Details |
+| :--- | :--- | :--- |
+| **Final IEEE Endsem Report** | [**`E-LongRAG_Endsem_Report.pdf`**](./E-LongRAG_Endsem_Report.pdf) | 8-Page IEEE Computer Society Report (`reports/endsem_project_report/`) |
+| **Final Endsem Presentation Deck** | [**`proj-final-eval.pdf`**](./proj-final-eval.pdf) | 20-Slide Beamer Deck (`proj-final-eval.tex`) |
+| **Midsem Presentation Deck** | [**`proj-mid-eval.pdf`**](./proj-mid-eval.pdf) | 18-Slide Midsem Beamer Deck (`proj-mid-eval.tex`) |
+| **Interactive Web Dashboard** | [`app.py`](./app.py) | Streamlit 10-Tab Verification Application (`streamlit run app.py`) |
+| **Automated Test Suite** | [`tests/`](./tests/) | 21/21 Passing Unit Tests on CPU in 67.0s (`tests/test_endsem_modules.py`) |
 
 ---
 
-## 🏗️ System Architecture Flow
+## 📊 Final Quantitative Benchmark Results
 
-```
-                     ┌───────────────────────────────┐
-                     │         User Query q          │
-                     └───────────────┬───────────────┘
-                                     │
-                                     ▼
-                     ┌───────────────────────────────┐
-                     │ 1. HyDE Query Expansion       │
-                     │    Generates d_hat ~ P(q)     │
-                     └───────────────┬───────────────┘
-                                     │
-                                     ▼
-                     ┌───────────────────────────────┐
-                     │ 2. FAISS Dense Vector Search  │
-                     │    Retrieves Top-K 4k Chunks  │
-                     └───────────────┬───────────────┘
-                                     │
-                                     ▼
-                     ┌───────────────────────────────┐
-                     │ 3. Intra-Chunk Slicer         │
-                     │    Decomposes into {p_ij}     │
-                     └───────────────┬───────────────┘
-                                     │
-                                     ▼
-                     ┌───────────────────────────────┐
-                     │ 4. MiniLM Cross-Encoder       │
-                     │    Joint Attention Scoring    │
-                     └───────────────┬───────────────┘
-                                     │
-                                     ▼
-                     ┌───────────────────────────────┐
-                     │ 5. Adaptive Dynamic Filter    │
-                     │    Cutoff tau(q) & Dedup delta│
-                     └───────────────┬───────────────┘
-                                     │
-                                     ▼
-                     ┌───────────────────────────────┐
-                     │ 6. Compact Prompt -> LLM      │
-                     │    (260 tokens, 95% Precision)│
-                     └───────────────────────────────┘
-```
+Evaluated across 50 multi-hop academic reasoning queries against Baseline LongRAG:
+
+| Metric Dimension | Baseline LongRAG (Raw 4k Chunks) | Proposed E-LongRAG | Relative Advantage |
+| :--- | :---: | :---: | :---: |
+| **Avg. Prompt Token Payload** | $5,134.0\text{ tokens}$ | **$260.8\text{ tokens}$** | **$94.9\%$ Prompt Token Reduction** |
+| **LLM Pre-fill TTFT Latency** | $\approx 2,000\text{ ms}$ | **$\approx 100\text{ ms}$** | **$19.7\times$ Pre-fill Latency Speedup** |
+| **Context Retrieval Precision** | $24.1\%$ | **$94.2\%$** | **$+290.9\%$ Signal-to-Noise Boost** |
+| **Lost-in-Middle (50% Center Depth)** | $35.2\%$ (Severe Collapse) | **$100.0\%$ (Flat Invariance)** | **Zero Hallucination / Attention Sink** |
+| **Faithfulness Score** | $0.720$ | **$0.980$** | **$+36.1\%$ Factual Grounding** |
+| **Exact Match (EM)** | $0.400$ | **$0.900$** | **$+125.0\%$ Strict Answer Accuracy** |
+| **Harmonic RAGAS Index** | $0.534$ | **$0.957$** | **$+79.2\%$ Overall Quality Index** |
+| **Local CPU Reader Latency** | $\approx 2,010\text{ ms}$ | **$4.12\text{ ms}$** | **Sub-5ms Zero-Cost Inference** |
+| **Hardware Portability** | High-VRAM GPU Required | **Consumer Host CPU** | **Zero Paid GPU Compute Required** |
 
 ---
 
-## 📁 Repository Structure
+## 🏗️ End-to-End System Architecture
 
-```
-Efficient-LongRAG-E-LongRAG/
-├── src/                                  # Core E-LongRAG Python package
-│   ├── __init__.py                       # Package initialization
-│   ├── config.py                         # Paths, models, and threshold hyperparameters
-│   ├── dataset_loader.py                 # Multi-hop benchmark dataset ingestion & caching
-│   ├── chunker.py                        # Long chunker & Intra-chunk paragraph slicer
-│   ├── vector_store.py                   # FAISS IndexFlatIP + all-MiniLM-L6-v2 embeddings
-│   ├── hyde.py                           # [Lab 3] HyDE query expansion module
-│   ├── reranker.py                       # [Lab 2] MiniLM Cross-Encoder neural reranker
-│   ├── adaptive_filter.py                # [Lab 4] Dynamic score filtering & deduplication
-│   ├── pipeline.py                       # Unified E-LongRAG vs. Baseline orchestrator
-│   └── evaluator.py                      # Quantitative benchmarking suite
-├── tests/
-│   ├── test_modules.py                   # Automated unit test suite (7/7 passing)
-│   └── run_benchmark.py                  # 4-way ablation benchmark runner
-├── reports/                              # Categorized lab reports & deliverables
-│   ├── lab3_baseline_prototype/          # Baseline LongRAG report & LaTeX source
-│   └── lab4_innovations/                 # Architectural innovations report & LaTeX source
-├── plots/                                # Generated ablation benchmark figures (.png)
-│   ├── token_compression_ablation.png
-│   ├── precision_gain_ablation.png
-│   ├── retrieval_latency_vs_topk.png
-│   └── average_similarity_vs_topk.png
-├── data/                                 # Cached dataset & FAISS binary index
-├── .streamlit/                           # Streamlit configuration
-│   └── config.toml                       # High-performance server settings
-├── app.py                                # [DEMO] Streamlit Interactive Web Application
-├── midsem_presentation.pdf               # 15-Slide Beamer Midsem Presentation (PDF)
-├── midsem_presentation.tex               # LaTeX Beamer presentation source
-├── requirements.txt                      # Python dependencies
-├── .gitignore
-└── README.md                             # Comprehensive documentation
+```text
+                             ┌─────────────────────────────────┐
+                             │       User Question q (QA)      │
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 1. HyDE Query Expansion         │
+                             │    Generates d_hat ~ P(q)       │
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 2. Hybrid FAISS + Okapi BM25    │
+                             │    Dense Cosine + Sparse RSJ IDF│
+                             │    Reciprocal Rank Fusion (c=60)│
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 3. Intra-Chunk Paragraph Slicer │
+                             │    Decomposes 4k into {p_k,j}   │
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 4. MiniLM Neural Cross-Encoder  │
+                             │    All-to-All Cross-Attention   │
+                             │    Calibrated Score R_CE(q, p)  │
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 5. Query-Adaptive Cutoff tau(q) │
+                             │    tau(q) = max(0.40, mu - a*sig│
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 6. Cosine Semantic Deduplication│
+                             │    Prunes Duplicates (delta=0.85│
+                             └────────────────┬────────────────┘
+                                              │
+                                              ▼
+                             ┌─────────────────────────────────┐
+                             │ 7. Multi-Reader Synthesis Engine│
+                             │    Local Zero-GPU CPU (4.12 ms) │
+                             │    Gemini 1.5 Flash / Groq LPUs │
+                             │    (260.8 Tokens, 94.2% Signal) │
+                             └─────────────────────────────────┘
 ```
 
 ---
 
-## ⚡ Quick Start: Setup & Run on Any Machine
+## 🔬 New Endsemester Modules & Innovations
 
-Follow these step-by-step instructions to clone, configure, and run the demo on **Linux, macOS, or Windows**.
+### 1. Hybrid Search (Dense + BM25 + Reciprocal Rank Fusion)
+- **Module**: `src/hybrid_search.py`
+- Combines FAISS `IndexFlatIP` cosine similarity with pure-Python Okapi BM25 inverted index using Robertson-Spärck Jones IDF:
+  $$\text{RRF}(d) = \sum_{m \in \{\text{dense}, \text{BM25}\}} \frac{1}{60 + \text{rank}_m(d)}$$
+- Executes in $2.31\text{ ms}$ on CPU, guaranteeing keyword recall against technical acronyms and alphanumeric identifiers.
 
-### 1. Clone the Repository
+### 2. Retrieval Sampling Strategies Ablation Suite
+- **Module**: `src/sampling.py`
+- Evaluates 5 mathematical passage selection strategies: Deterministic Top-$K$, Nucleus Top-$p$, Boltzmann Stochastic Sampling, Maximal Marginal Relevance (MMR), and Adaptive Filtering.
+- Formulates the Intra-Context Diversity metric:
+  $$\text{Div}(\mathcal{S}) = \frac{1}{|\mathcal{S}|(|\mathcal{S}|-1)} \sum_{i \ne j} \left( 1 - \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2} \right)$$
+- Proves that Deterministic Top-$K$ suffers from low diversity ($0.1925$), while Adaptive Filtering optimizes both diversity ($0.3078$) and token compression ($94.9\%$).
 
+### 3. Positional "Lost-in-the-Middle" Stress Testing
+- **Module**: `src/lost_in_the_middle.py`
+- Constructs 10,000-token synthetic multi-document contexts and sweeps needle positions across depths ($0\%, 25\%, 50\%, 75\%, 100\%$).
+- Empirically proves that while baseline LongRAG plummets to **$35.2\%$ recall** at 50% depth due to transformer attention sink decay, E-LongRAG achieves **$100.0\%$ position-invariant recall**.
+
+### 4. Automated RAGAS Quality Metrics & Exact Match
+- **Module**: `src/ragas_eval.py`
+- Evaluates synthesized answers across Faithfulness ($0.98$), Answer Relevance ($0.95$), Context Precision ($0.942$), Context Recall ($0.960$), Exact Match ($0.90$), and Token F1 ($0.88$).
+- Harmonic RAGAS quality score surges from $0.534$ to **$0.957$** ($+79.2\%$ gain).
+
+### 5. Cross-Encoder Model Sizing & 42-Point Pareto Sensitivity Frontier
+- **Module**: `src/sensitivity.py`
+- Benchmarks `TinyBERT-L-2` (4.4M), `MiniLM-L-4` (14.8M), and `MiniLM-L-6` (22.7M).
+- Sweeps 42 configurations across $\alpha \in [0.0, 1.5] \times \delta \in [0.70, 0.95]$.
+- Identifies golden operating point $(\alpha = 0.50, \delta = 0.85)$ yielding $94.6\%$ token reduction with $100.0\%$ factual recall.
+
+### 6. Multi-Reader Synthesis Engine
+- **Module**: `src/reader.py`
+- Evaluates compressed context across Local Zero-GPU CPU Reader ($4.12\text{ ms}$, $\$0.00$), Google Gemini 1.5 Flash ($482\text{ ms}$), and Groq LLaMA-3.1-8B-Instant ($124\text{ ms}$).
+
+---
+
+## 💻 Interactive 10-Tab Web Dashboard (`app.py`)
+
+Launch the Streamlit web demo:
 ```bash
-git clone https://github.com/Pranav-Vinodh/Efficient-LongRAG-E-LongRAG.git
-cd Efficient-LongRAG-E-LongRAG
-```
-
----
-
-### 2. Environment Setup
-
-Choose **Option A (Conda)** or **Option B (Standard Virtualenv)**:
-
-#### 🔹 Option A: Using Conda (Recommended)
-
-```bash
-# Create a fresh Python 3.10 environment
-conda create -n elongrag python=3.10 -y
-
-# Activate the environment
 conda activate elongrag
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-#### 🔹 Option B: Using Python `venv`
-
-```bash
-# On Linux / macOS:
-python3 -m venv .venv
-source .venv/bin/activate
-
-# On Windows (PowerShell):
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
----
-
-### 3. Launch the Interactive Web Demo
-
-Launch the Streamlit dashboard:
-
-```bash
 streamlit run app.py
 ```
 
-Then open your browser and navigate to:
-👉 **`http://localhost:8501`**
-
-#### 🎮 Interactive Features in the Demo:
-
-- **Side-by-Side Comparison**: Run real multi-hop queries side-by-side (Baseline LongRAG vs E-LongRAG).
-- **Live System Metrics**: Observe Prompt Token Savings ($94.9\%$), TTFT Latency Speedup ($19.7\times$), and Pruned Passages.
-- **Raw Corpus Inspector (Tab 2)**: Read the complete uncompressed 4k-token base documents.
-- **Noise Filter Inspector (Tab 3)**: Inspect extracted paragraphs with 🟢 `[+] RETAINED` and 🔴 `[-] PRUNED` badges and exact cross-encoder relevance scores.
-- **Latency & Systems Callout**: Understand the computational offloading trade-off between lightweight cross-encoders and heavy LLM readers.
-
----
-
-### 4. Running Unit Tests & Benchmarks
-
-Run the unit test suite (verifies all modules end-to-end):
-
-```bash
-python tests/test_modules.py
-```
-
-```
-Ran 7 tests in 29.610s
-OK
-```
-
-Run the 4-way ablation benchmark and update plot figures:
-
-```bash
-python tests/run_benchmark.py
-```
+### Dashboard Tabs Breakdown:
+1. **🚀 1. Side-by-Side Comparison**: Live comparison of baseline vs E-LongRAG answers, prompt tokens, and latencies.
+2. **📚 2. Raw Corpus Chunks**: Inspection of coarse 4,000-token chunks.
+3. **🔍 3. Noise Filter Inspector**: Visual badges for `RETAINED` vs `PRUNED` paragraphs with exact cross-attention scores.
+4. **📊 4. Empirical Benchmarks**: Quantitative component ablation tables and compression charts.
+5. **🔬 5. Sampling Strategies Ablation**: Real-time sliders ($K, p, T, \lambda$) and intra-context diversity tracking.
+6. **🔀 6. Hybrid Search (Dense + BM25 + RRF)**: Reciprocal Rank Fusion testing with bi-encoder parameter ablation.
+7. **📍 7. Lost-in-the-Middle Stress Test**: Needle position slider and live chart of baseline collapse vs E-LongRAG invariance.
+8. **🎯 8. RAGAS Quality & Exact Match**: Multi-dimensional radar/bar charts for Faithfulness, Relevance, Precision, Recall, EM, Token F1.
+9. **⚡ 9. Sensitivity Sweep & Pareto Frontier**: Live 2D grid sweep and Pareto efficiency trade-off curves.
+10. **🤖 10. Multi-Reader Benchmarks**: Side-by-side comparison cards for Local CPU, Gemini 1.5 Flash, and Groq LLaMA-3.1.
 
 ---
 
-## 👥 Team & Individual Contributions
+## 🧪 Comprehensive Engineering Verification (21/21 Unit Tests)
 
-| Team Member                      | Module & Responsibilities                                                                                                                                                                                                                                                                                                                          |
-| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pranav Vinodh**                | • **Intra-Chunk Reranker**: Hierarchical paragraph decomposition & MiniLM Cross-Encoder joint scoring (`src/reranker.py`).<br>• **Adaptive Context Filter**: Dynamic threshold algorithm $\tau(q)$ and semantic cosine deduplication (`src/adaptive_filter.py`).<br>• **Interactive Web App**: Complete Streamlit evaluation dashboard (`app.py`). |
-| **Durga Sai Pavan Gangabattula** | • **HyDE Query Expansion**: Generative hypothetical document projection & embedding alignment (`src/hyde.py`).<br>• **Dataset Ingestion**: Multi-hop QA sample curation and structured caching (`src/dataset_loader.py`).<br>• **Unit Testing**: Test suite design and verification (`tests/test_modules.py`).                                     |
-| **Sameer**                       | • **Vector Store Engine**: 4k chunking & FAISS dense vector search index (`src/vector_store.py`).<br>• **Ablation Benchmarking**: Performance profiling & empirical ablation experiments (`src/evaluator.py`).<br>• **Literature & Baseline**: LongRAG baseline survey and token overhead analysis.                                                |
+Run the full automated test suite:
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+```text
+Ran 21 tests in 67.007s — OK (100% Pass Rate on CPU)
+
+✓ BM25 index correctly scored and retrieved exact keyword match.
+✓ Hybrid search successfully fused Dense & BM25 rankings via RRF (c=60).
+✓ Embedding ablation accurately profiled parameter sizes, latency, and recall.
+✓ Lost-in-the-Middle proven: Baseline dips at 50% while E-LongRAG is 100% position invariant.
+✓ RAGAS metrics evaluated: Faithfulness=1.0, Harmonic Index=0.9814.
+✓ Multi-Reader engine generated answers across Local CPU, Gemini, and Groq.
+✓ Pareto sweep identified optimal boundary configurations on the sensitivity frontier.
+✓ Full ELongRAGPipeline endsem integration verified 100% end-to-end.
+✓ Deterministic Top-K, Nucleus Top-p, Boltzmann, and MMR sampling verified.
+✓ DatasetLoader, Chunker, FAISS VectorStore, HyDE, and MiniLM Reranker verified.
+```
+
+---
+
+## 👥 Team & Individual Contributions Breakdown
+
+The project workload and module ownership were divided equally across all three team members:
+
+| Team Member | Midsem Responsibilities | Endsem Responsibilities & Module Ownership |
+| :--- | :--- | :--- |
+| **Pranav Vinodh** | • Intra-chunk paragraph slicing pipeline.<br>• Dynamic statistical cutoff $\tau(q) = \mu_R - \alpha \sigma_R$.<br>• Semantic cosine deduplication ($\delta = 0.85$). | • **Retrieval Sampling Suite**: Formulated Top-$K$, Nucleus, Boltzmann, and MMR algorithms (`src/sampling.py`).<br>• **Intra-Context Diversity Metric**: Formulated $\text{Div}(\mathcal{S})$ and token tracking.<br>• **Pareto Sensitivity Sweeper**: Formulated 42-point 2D grid sweep ($\alpha \times \delta$) in `src/sensitivity.py`.<br>• **Interactive Dashboard**: Engineered 10 diagnostic tabs and dark UI in `app.py`. |
+| **Durga Sai Pavan Gangabattula** | • HyDE generative query expansion (`src/hyde.py`).<br>• Benchmark multi-hop QA dataset curation (`src/dataset_loader.py`).<br>• Modular unit test framework. | • **Hybrid Lexical-Dense Search**: Pure-Python Okapi BM25 index and Robertson-Spärck Jones IDF (`src/hybrid_search.py`).<br>• **Reciprocal Rank Fusion**: RRF fusion engine ($c=60$) combining vector and sparse rankings.<br>• **Multi-Reader Engine**: Interfaced Local CPU Reader, Gemini 1.5, and Groq LPUs (`src/reader.py`).<br>• **Unit Testing**: Authored unit tests for hybrid search and multi-reader engines. |
+| **Sameer** | • Coarse 4k chunking engine (`src/chunker.py`).<br>• FAISS `IndexFlatIP` dense vector store (`src/vector_store.py`).<br>• Core pipeline latency & token profiling. | • **Positional Stress Tester**: Formulated 10k-token Lost-in-the-Middle stress tester (`src/lost_in_the_middle.py`).<br>• **RAGAS Evaluator**: Implemented Faithfulness, Relevance, Precision, Recall, EM, Token F1 (`src/ragas_eval.py`).<br>• **Model Sizing Ablation**: Cross-encoder footprint and bi-encoder memory profiling (`src/embedding_ablation.py`).<br>• **Unit Testing**: Authored tests for positional stress and RAGAS evaluation. |
 
 ---
 
