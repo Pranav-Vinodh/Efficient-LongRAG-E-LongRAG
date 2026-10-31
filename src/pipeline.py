@@ -8,6 +8,12 @@ from .hyde import HyDEQueryExpander
 from .reranker import MiniLMReranker
 from .adaptive_filter import AdaptiveContextFilter
 from .sampling import RetrievalSamplingStrategies
+from .hybrid_search import HybridRetriever, BM25Index
+from .embedding_ablation import EmbeddingAblator
+from .lost_in_the_middle import LostInTheMiddleStressTester
+from .ragas_eval import RAGASEvaluator
+from .reader import MultiReaderEngine
+from .sensitivity import SensitivitySweeper, CrossEncoderModelSizing
 
 class ELongRAGPipeline:
     """
@@ -29,7 +35,15 @@ class ELongRAGPipeline:
         self.reranker = MiniLMReranker()
         self.filter = AdaptiveContextFilter()
         
-        print("[Pipeline] All modules (Chunker, FAISS, HyDE, MiniLM, Filter) successfully initialized.\n")
+        # Endsem Evaluation Modules
+        self.hybrid_retriever = HybridRetriever(self.vector_store, self.chunks)
+        self.embedding_ablator = EmbeddingAblator(self.vector_store, self.chunks)
+        self.stress_tester = LostInTheMiddleStressTester(self)
+        self.ragas_evaluator = RAGASEvaluator()
+        self.multi_reader = MultiReaderEngine()
+        self.sensitivity_sweeper = SensitivitySweeper()
+        
+        print("[Pipeline] All modules (Chunker, FAISS, HyDE, MiniLM, Filter, Hybrid, StressTester, RAGAS, MultiReader, Sensitivity) initialized.\n")
 
     def generate_answer(self, query, context, is_baseline=False):
         """
@@ -404,6 +418,77 @@ class ELongRAGPipeline:
                 }
             }
         }
+
+    def run_hybrid_search(self, query: str, top_k: int = 3, weight_dense: float = 0.5, use_rrf: bool = True):
+        """
+        Executes hybrid dense-sparse search combining FAISS IndexFlatIP cosine similarity
+        and Okapi BM25 inverted index via Reciprocal Rank Fusion (RRF).
+        """
+        return self.hybrid_retriever.search_hybrid(
+            query=query,
+            top_k=top_k,
+            weight_dense=weight_dense,
+            use_rrf=use_rrf
+        )
+
+    def run_embedding_ablation(self, test_queries=None, top_k: int = 3):
+        """
+        Profiles dense bi-encoder architectures (MiniLM-L6, MiniLM-L3, BGE-small)
+        and BM25 lexical on parameter footprint, latency, recall, and MRR.
+        """
+        queries = test_queries or [
+            {"question": "Who introduced Lamport Timestamps and won the Turing Award?", "ground_truth": "Leslie Lamport Turing Award 2013"},
+            {"question": "Who formulated Shor's algorithm for quantum factorisation?", "ground_truth": "Peter Shor Dirac Medal 2002"},
+            {"question": "Who introduced Attention Is All You Need for deep learning transformers?", "ground_truth": "Vaswani et al. NIPS 2017"}
+        ]
+        return self.embedding_ablator.benchmark_models(queries, top_k=top_k)
+
+    def run_positional_stress_test(self, query: str = None, target_fact: str = None, context_tokens: int = 10000):
+        """
+        Conducts Lost-in-the-Middle positional stress testing across 0%, 25%, 50%, 75%, 100% depth.
+        Compares Baseline LongRAG U-shaped decay against E-LongRAG position invariance.
+        """
+        q = query or "Who introduced Lamport Timestamps in Distributed Consensus and won the Turing Award?"
+        fact = target_fact or "Leslie Lamport introduced Lamport Timestamps in Distributed Consensus and was awarded the Turing Award 2013."
+        return self.stress_tester.evaluate_positional_robustness(
+            query=q,
+            target_fact=fact,
+            context_tokens=context_tokens
+        )
+
+    def run_ragas_evaluation(self, query: str, answer: str, context: str, ground_truth: str, is_baseline: bool = False):
+        """
+        Evaluates QA quality across RAGAS dimensions:
+        Faithfulness, Answer Relevance, Context Precision, Context Recall, Exact Match, and Token F1.
+        """
+        return self.ragas_evaluator.evaluate_full_ragas(
+            query=query,
+            answer=answer,
+            context=context,
+            ground_truth=ground_truth,
+            is_baseline=is_baseline
+        )
+
+    def run_multi_reader(self, query: str, context: str):
+        """
+        Generates and benchmarks answers across Local CPU Reader, Gemini 1.5 Flash, and Groq LLaMA-3.1.
+        """
+        return self.multi_reader.benchmark_all_readers(query, context)
+
+    def run_sensitivity_sweep(self, query: str, top_k: int = 2):
+        """
+        Runs a 2D parameter grid sweep over alpha in [0.0, 1.5] and delta in [0.70, 0.95]
+        to identify the Pareto efficiency frontier of token compression vs answer precision.
+        """
+        hyde_res = self.hyde.get_hyde_embedding(query, self.vector_store)
+        retrieved_chunks, _ = self.vector_store.search(hyde_res["hyde_vector"], top_k=top_k)
+        candidate_paragraphs = batch_slice_chunks(retrieved_chunks)
+        scored_paragraphs, _ = self.reranker.score_paragraphs(query, candidate_paragraphs)
+
+        return self.sensitivity_sweeper.run_pareto_grid_sweep(
+            scored_paragraphs,
+            vector_store=self.vector_store
+        )
 
     def compare(self, query, top_k=3):
         """
