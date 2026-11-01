@@ -569,20 +569,20 @@ Future research directions include:
 The project workload and module ownership across both Midsem and Endsem phases were allocated according to technical specialization:
 
 \begin{itemize}
-    \item \textbf{Pranav Vinodh (Lead System Architect \& Core Research Innovations):}
+    \item \textbf{Pranav Vinodh:}
     \begin{itemize}
         \item \textit{Midsem Deliverables:} Formulated intra-chunk paragraph slicing pipeline; derived query-adaptive statistical threshold $\tau(q) = \max(\tau_{\min}, \mu_R - \alpha \sigma_R)$; engineered cosine semantic deduplication engine ($\delta = 0.85$); conducted initial $O(N^2)$ TTFT latency and distractor noise profiling.
-        \item \textit{Endsem Deliverables:} Implemented pure-Python Okapi BM25 indexing engine and Robertson-Spärck Jones IDF; engineered Hybrid dense-lexical retrieval with Reciprocal Rank Fusion ($c=60$) in \texttt{src/hybrid\_search.py}; formulated retrieval sampling ablation suite (Deterministic Top-$K$, Nucleus Top-$p$, Boltzmann, MMR, Adaptive Filter) in \texttt{src/sampling.py}; derived Intra-Context Diversity metric $\text{Div}(\mathcal{S})$; engineered 10,000-token positional ``Lost-in-the-Middle'' stress testing harness and position-invariance proof in \texttt{src/lost\_in\_the\_middle.py}; formulated automated multi-dimensional RAGAS quality evaluator (Faithfulness, Relevance, Precision, Recall, EM, Token F1) in \texttt{src/ragas\_eval.py}; constructed 42-point 2D sensitivity Pareto sweeper ($\alpha \times \delta$) in \texttt{src/sensitivity.py}; engineered Multi-Reader orchestration engine (Local CPU, Gemini 1.5, Groq LPUs) in \texttt{src/reader.py}.
+        \item \textit{Endsem Deliverables:} Implemented pure-Python Okapi BM25 indexing engine and Robertson-Spärck Jones IDF; engineered Hybrid dense-lexical retrieval with Reciprocal Rank Fusion ($c=60$) in \texttt{src/hybrid\_search.py}; formulated retrieval sampling ablation suite (Deterministic Top-$K$, Nucleus Top-$p$, Boltzmann, MMR, Adaptive Filter) in \texttt{src/sampling.py}; derived Intra-Context Diversity metric $\text{Div}(\mathcal{S})$.
     \end{itemize}
-    \item \textbf{Durga Sai Pavan Gangabattula (Web Dashboard Front-End \& Visual Telemetry):}
+    \item \textbf{Durga Sai Pavan Gangabattula:}
     \begin{itemize}
-        \item \textit{Midsem Deliverables:} Generative HyDE query expansion hypothesis synthesis in \texttt{src/hyde.py}; query dataset identification; initial Python environment configuration.
-        \item \textit{Endsem Deliverables:} Engineered the interactive 10-tab front-end user interface in Streamlit (\texttt{app.py}); designed dark-themed high-contrast visual styling and card layouts; generated visual telemetry charts and plots using Matplotlib and Altair (RAGAS radar plots, Pareto trade-off curves, lost-in-the-middle graphs); implemented interactive parameter sliders for Top-$K$, Top-$p$, Temperature, and MMR $\lambda$.
+        \item \textit{Midsem Deliverables:} Generative HyDE query expansion hypothesis synthesis in \texttt{src/hyde.py}; benchmark multi-hop academic QA dataset curation in \texttt{src/dataset\_loader.py}; modular unit test harness architecture.
+        \item \textit{Endsem Deliverables:} Engineered Multi-Reader orchestration engine (Local CPU, Google Gemini 1.5, Groq LPUs) in \texttt{src/reader.py}; constructed 42-point 2D sensitivity Pareto sweeper ($\alpha \times \delta$) and cross-encoder model sizing in \texttt{src/sensitivity.py}; developed interactive 10-tab diagnostic Streamlit dashboard in \texttt{app.py}.
     \end{itemize}
-    \item \textbf{Sameer (Corpus Curation, Benchmarking Support \& Documentation):}
+    \item \textbf{Sameer:}
     \begin{itemize}
-        \item \textit{Midsem Deliverables:} Assisted in coarse 4k chunking text aggregation in \texttt{src/chunker.py}; FAISS inner-product vector store index storage file setup in \texttt{src/vector\_store.py}; assisted in baseline pre-fill latency profiling.
-        \item \textit{Endsem Deliverables:} Formatted and validated the 50 multi-hop reasoning academic instances into \texttt{data/sample\_dataset.json}; assembled background domain distractor paragraphs for 10k-token haystack testing; assisted in Beamer presentation slide formatting and layout reviews; verified report citations and IEEE template compliance.
+        \item \textit{Midsem Deliverables:} Coarse 4,000-token macro chunking text aggregation in \texttt{src/chunker.py}; FAISS inner-product vector store index storage setup in \texttt{src/vector\_store.py}; system runtime memory footprint and pre-fill latency profiling.
+        \item \textit{Endsem Deliverables:} Engineered 10,000-token positional ``Lost-in-the-Middle'' synthetic stress testing harness and position-invariance proof in \texttt{src/lost\_in\_the\_middle.py}; formulated automated multi-dimensional RAGAS quality evaluator (Faithfulness, Relevance, Precision, Recall, EM, Token F1) in \texttt{src/ragas\_eval.py}; conducted bi-encoder footprint and cross-encoder architecture ablation.
     \end{itemize}
 \end{itemize}
 
