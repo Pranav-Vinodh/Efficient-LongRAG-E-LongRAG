@@ -1,51 +1,20 @@
-\documentclass[10pt,journal,compsoc]{IEEEtran}
-
+\documentclass[lettersize,journal]{IEEEtran}
 \usepackage{amsmath,amsfonts,amssymb}
+\usepackage{algorithmic}
+\usepackage{algorithm}
 \usepackage{array}
-\usepackage{booktabs}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
 \usepackage{graphicx}
 \usepackage{cite}
-\usepackage{url}
-\usepackage{microtype}
+\usepackage{booktabs}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows}
-\usepackage{listings}
-\usepackage[most]{tcolorbox}
 
-% Listings styling for pseudocode presentation
-\lstset{
-    basicstyle=\ttfamily\scriptsize,
-    keywordstyle=\bfseries\color{blue!80!black},
-    commentstyle=\itshape\color{gray!80!black},
-    stringstyle=\color{green!60!black},
-    numbers=left,
-    numberstyle=\tiny\color{gray},
-    stepnumber=1,
-    numbersep=6pt,
-    tabsize=2,
-    showspaces=false,
-    showstringspaces=false,
-    breaklines=true,
-    breakatwhitespace=true,
-    frame=none
-}
-
-\tcbset{
-    algoframe/.style={
-        colback=gray!4,
-        colframe=blue!40!black,
-        boxrule=0.6pt,
-        arc=2pt,
-        left=4pt,
-        right=4pt,
-        top=4pt,
-        bottom=4pt,
-        fonttitle=\bfseries\footnotesize,
-        coltitle=white
-    }
-}
-
-\hyphenation{op-tical net-works semi-conduc-tor}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
 
 \begin{document}
 
@@ -55,28 +24,24 @@
         Durga~Sai~Pavan~Gangabattula,
         and~Sameer%
 \thanks{The authors are with the Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal, Mangalore 575025, India (e-mail: pranav.vinodh@nitk.edu.in).}%
-\thanks{Course: Large Language Models (IT 488) --- Final Endsemester Project Report.}}
+\thanks{Course: Large Language Models (IT 488) --- Final Endsemester Project Evaluation.}}
 
-\markboth{Department of Information Technology, NITK Surathkal --- IT 488: Large Language Models}%
-{Vinodh \MakeLowercase{\textit{et al.}}: Efficient LongRAG: Adaptive Context Filtering and Multi-Metric Evaluation}
+% The paper headers
+\markboth{Department of Information Technology, NITK Surathkal --- IT 488: Large Language Models, Endsemester Evaluation}%
+{Vinodh \MakeLowercase{\textit{et al.}}: Efficient LongRAG: Adaptive Context Filtering and Multi-Metric Evaluation for Long-Context LLMs}
 
-\IEEEtitleabstractindextext{%
+\IEEEpubid{0000--0000/00\$00.00~\copyright~2026 IEEE}
+
+\maketitle
+
 \begin{abstract}
-Retrieval-Augmented Generation (RAG) paradigms face a fundamental dilemma between semantic integrity and computational efficiency. Conventional short-chunk retrieval (100–500 tokens) severs multi-hop reasoning across arbitrary passage boundaries, whereas baseline LongRAG ($\approx 4,000$ tokens per unit) preserves document context at the cost of severe prompt bloat ($5,000+$ tokens), quadratic self-attention pre-fill latency ($O(N^2)$ Time-To-First-Token), and lost-in-the-middle distractor hallucinations. To resolve this trade-off, we propose Efficient LongRAG (E-LongRAG), an adaptive post-retrieval optimization architecture combining coarse long-chunk retrieval with three lightweight filtering stages: (1) Hypothetical Document Embeddings (HyDE) query expansion with hybrid dense-lexical Reciprocal Rank Fusion (RRF); (2) Intra-chunk paragraph slicing with cross-encoder neural reranking to evaluate fine-grained joint attention while overcoming the 512-token BERT sequence limit; and (3) Query-adaptive statistical score thresholding $\tau(q) = \max(\tau_{\min}, \mu_R - \alpha \sigma_R)$ coupled with cosine semantic deduplication. Benchmarked across 50 multi-hop reasoning samples on CPU, E-LongRAG achieves a 94.9\% prompt token reduction ($5,134.0 \rightarrow 260.8$ tokens), a 19.7x pre-fill speedup, an increase in context precision from 24.1\% to 94.2\%, and 100.0\% position-invariant recall across 10,000-token contexts where baseline LongRAG degrades to 35.2\%. All components operate locally on standard CPUs with zero GPU dependencies.
+Retrieval-Augmented Generation (RAG) paradigms face a fundamental trade-off between narrative semantic completeness and downstream computational efficiency. Conventional short-chunk retrieval ($100$--$500$ tokens) severs multi-hop reasoning across arbitrary passage boundaries, whereas baseline LongRAG ($\approx 4,000$ tokens per unit) preserves document context at the cost of severe prompt bloat ($5,000+$ tokens), quadratic self-attention pre-fill latency ($O(N^2)$ Time-To-First-Token), and lost-in-the-middle distractor hallucinations. To resolve this trade-off, we propose Efficient LongRAG (E-LongRAG), an adaptive post-retrieval optimization architecture combining coarse long-chunk retrieval with three lightweight filtering stages: (1) Hypothetical Document Embeddings (HyDE) query expansion coupled with hybrid dense-lexical Reciprocal Rank Fusion (RRF); (2) Intra-chunk paragraph slicing with cross-encoder neural reranking to evaluate fine-grained joint attention while overcoming the 512-token BERT sequence limit; and (3) Query-adaptive statistical score thresholding $\tau(q) = \max(\tau_{\min}, \mu_R - \alpha \sigma_R)$ combined with cosine semantic deduplication ($\delta = 0.85$). Evaluated across 50 multi-hop reasoning instances on CPU, E-LongRAG achieves a 94.9\% prompt token reduction ($5,134.0 \rightarrow 260.8$ tokens), a 19.7$\times$ pre-fill speedup, an increase in context precision from 24.1\% to 94.2\%, and 100.0\% position-invariant recall across 10,000-token contexts where baseline LongRAG degrades to 35.2\%. All components operate locally on standard CPUs with zero GPU dependencies.
 \end{abstract}
 
 \begin{IEEEkeywords}
 Retrieval-Augmented Generation, Long-Context LLMs, Adaptive Context Filtering, Cross-Encoder Reranking, Reciprocal Rank Fusion, Lost-in-the-Middle, RAGAS Evaluation, Pareto Efficiency.
-\end{IEEEkeywords}}
+\end{IEEEkeywords}
 
-\maketitle
-
-\IEEEdisplaynontitleabstractindextext
-\IEEEpeerreviewmaketitle
-
-% =============================================================
-% SECTION 1: INTRODUCTION AND PROBLEM STATEMENT
-% =============================================================
 \section{Introduction and Problem Statement}
 \IEEEPARstart{R}{etrieval-Augmented} Generation (RAG) has emerged as the premier architectural paradigm for deploying Large Language Models (LLMs) on enterprise knowledge bases, private institutional documentation, and rapidly evolving domains without undertaking parameter retraining~\cite{longrag}. By dynamically conditioning decoder generation on retrieved non-parametric evidence passages, RAG systems substantially reduce factual hallucinations and enforce verifiability. However, contemporary RAG systems suffer from an acute structural trade-off dictated by the granularity of document chunking.
 
@@ -101,12 +66,12 @@ Retrieval-Augmented Generation, Long-Context LLMs, Adaptive Context Filtering, C
     \draw [arr] (p2) -- (r2);
     \draw [arr] (p3) -- (r3);
 \end{tikzpicture}
-\caption{Conceptual Diagram Illustrating the Long-Context RAG Trade-Off: Short-chunk fragmentation vs. LongRAG prompt bloat vs. E-LongRAG's adaptive filtered context.}
+\caption{Conceptual diagram illustrating the long-context RAG dilemma: short-chunk fragmentation vs. LongRAG prompt bloat vs. E-LongRAG's adaptive filtered context.}
 \label{fig:intro_concept}
 \end{figure}
 
 \subsection{The Short-Chunk Fragmentation Dilemma}
-Standard RAG frameworks decompose source documents into small passages ($100$ to $500$ tokens) indexed via dense embedding representations~\cite{sbert}. While concise chunks minimize LLM prompt token counts, they fragment complex narrative flow and sever entity relationships that span paragraph or chapter boundaries. In multi-hop reasoning tasks—such as tracing historical causality across scientific papers or cross-referencing distributed protocol specifications—vital bridging evidence is split across disparate vectors. Consequently, bi-encoder retrieval models return isolated snippets lacking contextual grounding, precipitating unfaithful reader responses.
+Standard RAG frameworks decompose source documents into small passages ($100$ to $500$ tokens) indexed via dense embedding representations~\cite{sbert}. While concise chunks minimize LLM prompt token counts, they fragment complex narrative flow and sever entity relationships that span paragraph or chapter boundaries. In multi-hop reasoning tasks---such as tracing historical causality across scientific papers or cross-referencing distributed protocol specifications---vital bridging evidence is split across disparate vectors. Consequently, bi-encoder retrieval models return isolated snippets lacking contextual grounding, precipitating unfaithful reader responses.
 
 \subsection{The LongRAG Prompt Bloat and Latency Bottleneck}
 To circumvent chunk fragmentation, recent advances such as \textit{LongRAG} by Jiang \textit{et al.}~\cite{longrag} scale retrieval unit granularity by an order of magnitude, aggregating text into coarse $2,000$--$4,000$ token multi-document blocks. While this macro-retrieval preserves contextual completeness, it shifts an unsustainable computational and cognitive burden onto the downstream LLM reader:
@@ -116,8 +81,10 @@ To circumvent chunk fragmentation, recent advances such as \textit{LongRAG} by J
     \item \textbf{Extreme Distractor Noise and Financial Cost:} Empirical analysis reveals that over $90\%$ of tokens within a 4,000-token chunk are irrelevant to the active user query, inflating commercial inference costs proportionally without improving generation quality.
 \end{enumerate}
 
+\IEEEpubidadjcol
+
 \subsection{Research Problem and Objectives}
-The core challenge is to preserve the macro-level retrieval recall of long-context chunking while completely eliminating prompt bloat, quadratic TTFT latency, and distractor-induced hallucination. The objective of this research is to design, implement, and benchmark \textbf{Efficient LongRAG (E-LongRAG)}—an end-to-end post-retrieval optimization architecture that:
+The core challenge is to preserve the macro-level retrieval recall of long-context chunking while completely eliminating prompt bloat, quadratic TTFT latency, and distractor-induced hallucination. The objective of this research is to design, implement, and benchmark \textbf{Efficient LongRAG (E-LongRAG)}---an end-to-end post-retrieval optimization architecture that:
 \begin{itemize}
     \item Indexes and retrieves coarse long chunks ($\ge 2,000$ tokens) to maintain cross-document reasoning continuity;
     \item Deconstructs retrieved chunks into sub-paragraph units and scores them via cross-attention neural reranking;
@@ -136,9 +103,6 @@ The original contributions of this research are concretely articulated as follow
     \item \textbf{Reproducible Open-Source Framework and Dashboard:} We deliver an open-source, fully tested system with 21/21 passing unit tests on CPU and an interactive 10-tab diagnostic Streamlit dashboard.
 \end{enumerate}
 
-% =============================================================
-% SECTION 2: LITERATURE REVIEW
-% =============================================================
 \section{Literature Review}
 The evolution of Retrieval-Augmented Generation spans multiple technical domains: dense vector retrieval, long-context representation, neural reranking, prompt compression, and hybrid search fusion. This section provides a critical analysis of existing paradigms, highlights their limitations, and delineates the research gaps addressed by E-LongRAG.
 
@@ -147,6 +111,7 @@ Dense Passage Retrieval (DPR)~\cite{sbert} pioneered dual-encoder architectures,
 
 \textit{Critical Analysis \& Limitations:} Bi-encoders process query $q$ and passage $p$ independently without cross-token attention:
 \begin{equation}
+\label{eq:biencoder}
 \text{Sim}_{\text{bi}}(q, p) = \langle E_Q(q), E_P(p) \rangle
 \end{equation}
 This independence discards word-order nuances, syntactic negation, and fine-grained lexical matching. To fit vector representations, documents must be split into short chunks ($100$--$300$ tokens). When benchmarked on multi-hop datasets such as HotpotQA or academic reasoning corpora, short-chunk DPR exhibits severe boundary fragmentation: evidence required to link distinct entities is severed across arbitrary cutoffs, reducing multi-hop recall below $60\%$.
@@ -156,6 +121,7 @@ To eliminate boundary fragmentation, Jiang \textit{et al.}~\cite{longrag} propos
 
 \textit{Critical Analysis \& Limitations:} While LongRAG successfully captures multi-hop narrative continuity, it exposes a catastrophic computational bottleneck in the downstream LLM reader. Transformer decoder architectures compute causal self-attention across prompt tokens with $O(N^2)$ algorithmic complexity:
 \begin{equation}
+\label{eq:attention}
 \text{Attention}(Q, K, V) = \text{softmax}\left( \frac{QK^T}{\sqrt{d_k}} \right) V
 \end{equation}
 For a $5,000$-token retrieved context, prompt pre-fill time requires $\approx 2,000\text{ ms}$ on high-end GPUs. Furthermore, cognitive studies by Liu \textit{et al.}~\cite{lostinmiddle} established that decoder attention weights decay exponentially in the middle of long contexts. When key facts reside in the middle $50\%$ of a 4k chunk, extraction accuracy degrades by over $40\%$, leading to ungrounded hallucinations.
@@ -163,6 +129,7 @@ For a $5,000$-token retrieved context, prompt pre-fill time requires $\approx 2,
 \subsection{Cross-Encoder Reranking and Length Bottlenecks}
 Cross-encoders~\cite{crossencoder} evaluate joint query-document representations by concatenating both texts into a single transformer input, computing full all-to-all cross-attention across every layer:
 \begin{equation}
+\label{eq:crossencoder}
 h_{\text{[CLS]}} = \text{Transformer}(\text{[CLS]} \circ q \circ \text{[SEP]} \circ p \circ \text{[SEP]})
 \end{equation}
 Empirical benchmarks consistently prove that cross-encoders (e.g., \texttt{ms-marco-MiniLM-L-6-v2}) achieve superior ranking precision compared to bi-encoders, capturing complex lexical dependencies and semantic entailment.
@@ -172,6 +139,7 @@ Empirical benchmarks consistently prove that cross-encoders (e.g., \texttt{ms-ma
 \subsection{Context Compression and Perplexity-Based Prompt Pruning}
 To alleviate prompt bloat, recent literature has explored post-retrieval context compression. Systems such as LLMLingua and LongLLMLingua utilize small language models (e.g., GPT-2 or LLaMA-7B) to compute token-level perplexity scores:
 \begin{equation}
+\label{eq:perplexity}
 L(x_i) = -\log P_{\text{LM}}(x_i \mid x_{<i})
 \end{equation}
 Tokens exhibiting low surprisal are pruned to compress prompt size by $2\times$--$4\times$. Similarly, AutoCompressor trains recursive summary vectors to condense long passages.
@@ -181,14 +149,13 @@ Tokens exhibiting low surprisal are pruned to compress prompt size by $2\times$-
 \subsection{Hybrid Dense-Sparse Retrieval and Rank Fusion}
 While dense vector retrieval excels at capturing semantic intent, it struggles with rare proper nouns, version numbers, and domain-specific acronyms. Classical lexical retrieval, spearheaded by Okapi BM25~\cite{bm25}, leverages inverted document frequency (IDF) to score term co-occurrences. Recent work has sought to combine both paradigms through Reciprocal Rank Fusion (RRF)~\cite{rrf}:
 \begin{equation}
+\label{eq:rrf_general}
 \text{RRF}(d) = \sum_{m \in \mathcal{M}} \frac{1}{c + \text{rank}_m(d)}
 \end{equation}
 
 \begin{table*}[!t]
-\caption{Systematic Literature Comparison and Research Gap Identification}
-\label{tab:literature_comparison}
+\caption{Systematic Literature Comparison and Research Gap Identification\label{tab:literature_comparison}}
 \centering
-\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Architecture / System} & \textbf{Chunk Granularity} & \textbf{Multi-Hop Recall} & \textbf{Prompt Token Bloat} & \textbf{TTFT Latency} & \textbf{Lost-in-Middle Risk} & \textbf{Hardware Requirement} \\
@@ -199,8 +166,7 @@ RAPTOR (Tree Summarization) & Hierarchical Summaries & Moderate & Moderate ($\ap
 LongLLMLingua~\cite{lostinmiddle} & Token Pruned & Moderate & Compressed ($2\times$--$4\times$) & Moderate ($\approx 800\text{ ms}$) & Moderate & High GPU (7B Evaluator) \\
 \textbf{Proposed E-LongRAG} & \textbf{4k Index + Sliced Paras} & \textbf{High ($>96\%$)} & \textbf{Compact ($\mathbf{260.8}$ tok)} & \textbf{Near-Instant ($\mathbf{\approx 100\text{ ms}}$)} & \textbf{Zero ($\mathbf{100\%}$ Invariant)} & \textbf{Zero-GPU (Pure CPU)} \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table*}
 
 \subsection{Research Gap Identification}
@@ -211,11 +177,8 @@ As synthesized in Table~\ref{tab:literature_comparison}, prior research presents
     \item Cross-attention neural reranking remains trapped behind the 512-token BERT sequence wall;
     \item Existing compression methods demand high-end GPU hardware ($>14\text{ GB}$ VRAM), precluding accessible CPU deployment.
 \end{enumerate}
-E-LongRAG resolves this structural gap by combining coarse 4,000-token retrieval with hierarchical paragraph slicing, lightweight cross-encoder neural scoring, query-adaptive dynamic thresholding, and hybrid RRF search—delivering high recall, compact prompts, zero lost-in-the-middle degradation, and 100\% CPU execution.
+E-LongRAG resolves this structural gap by combining coarse 4,000-token retrieval with hierarchical paragraph slicing, lightweight cross-encoder neural scoring, query-adaptive dynamic thresholding, and hybrid RRF search---delivering high recall, compact prompts, zero lost-in-the-middle degradation, and 100\% CPU execution.
 
-% =============================================================
-% SECTION 3: METHODOLOGY AND PROPOSED ARCHITECTURE
-% =============================================================
 \section{Methodology and Proposed Architecture}
 The architecture of Efficient LongRAG (E-LongRAG) is depicted in Fig.~\ref{fig:detailed_architecture}. The system operates across sequential processing pillars designed to filter distractor noise while preserving essential multi-hop evidence.
 
@@ -251,31 +214,36 @@ The architecture of Efficient LongRAG (E-LongRAG) is depicted in Fig.~\ref{fig:d
     \draw [arrow] (adapt) -- node[lbl] {High Signal} (dedup);
     \draw [arrow] (dedup) -- node[lbl] {Noise-Free} (llm);
 \end{tikzpicture}
-\caption{Detailed System Architecture of Efficient LongRAG (E-LongRAG), illustrating the complete pipeline from generative HyDE query expansion and hybrid RRF retrieval through hierarchical paragraph slicing, neural cross-attention reranking, and query-adaptive dynamic context pruning.}
+\caption{Detailed system architecture of Efficient LongRAG (E-LongRAG), illustrating the complete pipeline from generative HyDE query expansion and hybrid RRF retrieval through hierarchical paragraph slicing, neural cross-attention reranking, and query-adaptive dynamic context pruning.}
 \label{fig:detailed_architecture}
 \end{figure*}
 
 \subsection{Module 1: HyDE Generative Query Expansion}
 Short technical questions often exhibit significant vocabulary divergence from technical corpus documentation. Standard dense bi-encoders compute semantic similarity between an asymmetric query $q$ and candidate documents $d$. We deploy \textit{Hypothetical Document Embeddings (HyDE)}~\cite{hyde} to synthesize a representative hypothetical passage $\hat{d}$:
 \begin{equation}
+\label{eq:hyde_sample}
 \hat{d} \sim P_{\text{LM}}(\cdot \mid q)
 \end{equation}
 The hypothetical text $\hat{d}$ captures expected technical jargon, relational structures, and domain entities. It is embedded using a lightweight normalized bi-encoder $E(\cdot)$ (\texttt{sentence-transformers/all-MiniLM-L6-v2}):
 \begin{equation}
+\label{eq:dense_norm}
 v_{\text{search}} = \frac{E(\hat{d})}{\|E(\hat{d})\|_2} \in \mathbb{R}^{384}
 \end{equation}
 
 \subsection{Module 2: Hybrid Dense-Lexical Search via Reciprocal Rank Fusion}
 To eliminate dense embedding vulnerability to rare acronyms and exact alphanumeric identifiers, we combine dense vector search with inverted-index Okapi BM25 scoring~\cite{bm25}:
 \begin{equation}
+\label{eq:bm25}
 \text{BM25}(q, d) = \sum_{i=1}^m \text{IDF}(t_i) \cdot \frac{f(t_i, d) \cdot (k_1 + 1)}{f(t_i, d) + k_1 \left(1 - b + b \cdot \frac{|d|}{\text{avgdl}}\right)}
 \end{equation}
 with $k_1 = 1.5, b = 0.75$, and Robertson-Spärck Jones IDF:
 \begin{equation}
+\label{eq:rsj_idf}
 \text{IDF}(t_i) = \ln \left( \frac{N - n(t_i) + 0.5}{n(t_i) + 0.5} + 1.0 \right)
 \end{equation}
 FAISS executes maximum inner-product search over coarse chunks (\texttt{IndexFlatIP}), while BM25 calculates lexical scores. The rankings are combined via Reciprocal Rank Fusion (RRF)~\cite{rrf}:
 \begin{equation}
+\label{eq:rrf_fusion}
 \text{RRF}(d) = \sum_{m \in \{\text{dense}, \text{BM25}\}} \frac{1}{c + \text{rank}_m(d)}, \quad c = 60
 \end{equation}
 The top-$K$ highest scoring coarse chunks $C^* = \{c_1, \dots, c_K\}$ ($\approx 4,000$ tokens each) are retrieved.
@@ -283,6 +251,7 @@ The top-$K$ highest scoring coarse chunks $C^* = \{c_1, \dots, c_K\}$ ($\approx 
 \subsection{Module 3: Intra-Chunk Paragraph Slicing}
 Although coarse chunks preserve narrative continuity, they cannot be evaluated directly by transformer cross-encoders due to the 512-token sequence limit. E-LongRAG decomposes each chunk $c_k$ into discrete paragraph units along double newline delimiters:
 \begin{equation}
+\label{eq:slicing}
 c_k \longrightarrow \{ p_{k,1}, p_{k,2}, \dots, p_{k,m_k} \}, \quad |p_{k,j}| \in [200, 350] \text{ tokens}
 \end{equation}
 This hierarchical decomposition uncouples retrieval chunk granularity from reranking passage granularity.
@@ -290,10 +259,12 @@ This hierarchical decomposition uncouples retrieval chunk granularity from reran
 \subsection{Module 4: MiniLM Cross-Encoder Neural Reranking}
 Each sub-paragraph $p_{k,j}$ is concatenated with user query $q$ and evaluated by a pre-trained cross-encoder (\texttt{cross-encoder/ms-marco-MiniLM-L-6-v2}):
 \begin{equation}
+\label{eq:ce_input}
 \mathbf{x} = \text{[CLS]} \circ q \circ \text{[SEP]} \circ p_{k,j} \circ \text{[SEP]}
 \end{equation}
 The model computes joint bidirectional self-attention across all 6 transformer layers. The pooled $\text{[CLS]}$ embedding passes through a calibrated classification head:
 \begin{equation}
+\label{eq:ce_score}
 R_{CE}(q, p_{k,j}) = \sigma(W \cdot h_{\text{[CLS]}} + b) \in [0, 1]
 \end{equation}
 Scored paragraphs from all retrieved chunks are pooled: $\mathcal{P} = \{ (p_i, s_i) \}_{i=1}^M$.
@@ -301,80 +272,80 @@ Scored paragraphs from all retrieved chunks are pooled: $\mathcal{P} = \{ (p_i, 
 \subsection{Module 5: Query-Adaptive Statistical Thresholding}
 Fixed top-$K$ cutoffs fail across diverse queries: straightforward single-hop queries require only a single passage, whereas complex multi-hop queries demand multiple paragraphs. E-LongRAG computes dynamic query-conditioned score cutoffs:
 \begin{equation}
+\label{eq:mean_std}
 \mu_R = \frac{1}{M} \sum_{i=1}^M s_i, \quad \sigma_R = \sqrt{\frac{1}{M} \sum_{i=1}^M (s_i - \mu_R)^2}
 \end{equation}
 \begin{equation}
+\label{eq:tau_q}
 \tau(q) = \max\left( \tau_{\min}, \; \mu_R - \alpha \cdot \sigma_R \right)
 \end{equation}
-where $\tau_{\min} = 0.40$ establishes a baseline confidence floor and $\alpha = 0.50$ controls selectivity. Passages satisfying $s_i \ge \tau(q)$ form candidate set $\mathcal{P}_{\text{retained}}$.
+where $\tau_{\min} = 0.40$ establishes a baseline confidence floor and $\alpha = 0.50$ controls selectivity. Passages satisfying $s_i \ge \tau(q)$ form candidate set $\mathcal{P}_{\text{filtered}}$.
 
 \subsection{Module 6: Semantic Cosine Deduplication}
 To eliminate duplicate facts arising from multi-document overlap, retained paragraphs are ranked in descending order of cross-encoder relevance. For each candidate passage $p_i$, pairwise cosine similarity is computed against all previously accepted passages $\mathcal{S}$:
 \begin{equation}
+\label{eq:cosine_sim}
 \text{Sim}(p_i, p_j) = \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2}
 \end{equation}
 If $\max_{p_j \in \mathcal{S}} \text{Sim}(p_i, p_j) \ge \delta = 0.85$, $p_i$ is flagged as redundant distractor noise and pruned. The final noise-free prompt context $\mathcal{C}_{\text{dense}}$ is assembled and dispatched to the reader engine.
 
 \subsection{Algorithmic Formulation}
-The end-to-end operational pipeline of E-LongRAG is formally articulated in Algorithm~\ref{algo:elongrag_pipeline}, and the adaptive statistical context filtering and deduplication mechanism is formalized in Algorithm~\ref{algo:adaptive_filter}.
+The end-to-end operational pipeline of E-LongRAG is formally articulated in Algorithm~\ref{alg:elongrag_pipeline}, and the adaptive statistical context filtering and deduplication mechanism is formalized in Algorithm~\ref{alg:adaptive_filter}.
 
-\begin{figure}[!t]
-\begin{tcolorbox}[algoframe, title={Algorithm 1: End-to-End E-LongRAG Hybrid Retrieval \& Filtering Pipeline}]
-\begin{lstlisting}[language=Python, mathescape=true]
-Input: User query $q$, Knowledge Corpus $\mathcal{D}$, Top-K parameter $K$,
-       Bi-Encoder $E(\cdot)$, Cross-Encoder $R_{CE}(\cdot)$, Parameters $\alpha, \delta, \tau_{\min}$
-Output: Synthesized answer $A$, Filtered dense context $\mathcal{C}_{\text{dense}}$
+\begin{algorithm}[H]
+\caption{End-to-End E-LongRAG Hybrid Retrieval and Filtering Pipeline}\label{alg:elongrag_pipeline}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Query $q$, Corpus $\mathcal{D}$, Top-$K$ $K$, Bi-Encoder $E(\cdot)$, Cross-Encoder $R_{CE}(\cdot)$, Hyperparameters $\alpha, \delta, \tau_{\min}$
+\STATE \textbf{Output:} Synthesized answer $A$, Filtered dense context $\mathcal{C}_{\text{dense}}$
+\STATE $\hat{d} \gets \text{GenerateHyDEHypothesis}(q)$
+\STATE $v_{\text{search}} \gets E(\hat{d}) / \|E(\hat{d})\|_2$
+\STATE $\text{Rank}_{\text{dense}} \gets \text{FAISSSearch}(v_{\text{search}}, \mathcal{D})$
+\STATE $\text{Rank}_{\text{BM25}} \gets \text{OkapiBM25Search}(q, \mathcal{D})$
+\FORALL{$d \in \mathcal{D}$}
+    \STATE $\text{RRF}(d) \gets \frac{1}{60 + \text{rank}_{\text{dense}}(d)} + \frac{1}{60 + \text{rank}_{\text{BM25}}(d)}$
+\ENDFOR
+\STATE $C^* \gets \text{SelectTopK}(\mathcal{D}, \text{RRF}, K)$
+\STATE $\mathcal{P}_{\text{cand}} \gets \emptyset$
+\FORALL{$c_k \in C^*$}
+    \STATE $\mathcal{P}_{\text{cand}} \gets \mathcal{P}_{\text{cand}} \cup \text{SliceIntoParagraphs}(c_k)$
+\ENDFOR
+\FORALL{$p_i \in \mathcal{P}_{\text{cand}}$}
+    \STATE $s_i \gets R_{CE}(q, p_i)$
+\ENDFOR
+\STATE $\mathcal{S}_{\text{clean}} \gets \text{AdaptiveFilterAndDedup}(\mathcal{P}_{\text{cand}}, \{s_i\}, \alpha, \delta, \tau_{\min})$
+\STATE $\mathcal{C}_{\text{dense}} \gets \text{Concatenate}(\mathcal{S}_{\text{clean}})$
+\STATE $A \gets \text{ReaderLLM}(\text{Prompt}(q, \mathcal{C}_{\text{dense}}))$
+\STATE \textbf{return} $A, \mathcal{C}_{\text{dense}}$
+\end{algorithmic}
+\end{algorithm}
 
-1:  $\hat{d} \leftarrow \text{GenerateHyDEHypothesis}(q)$
-2:  $v_{\text{search}} \leftarrow E(\hat{d}) / \|E(\hat{d})\|_2$
-3:  $\text{Rank}_{\text{dense}} \leftarrow \text{FAISSSearch}(v_{\text{search}}, \mathcal{D})$
-4:  $\text{Rank}_{\text{BM25}} \leftarrow \text{OkapiBM25Search}(q, \mathcal{D})$
-5:  For each document $d \in \mathcal{D}$ do:
-6:      $\text{RRF}(d) \leftarrow \frac{1}{60 + \text{rank}_{\text{dense}}(d)} + \frac{1}{60 + \text{rank}_{\text{BM25}}(d)}$
-7:  $C^* \leftarrow \text{SelectTopK}(\mathcal{D}, \text{RRF}, K)$
-8:  $\mathcal{P}_{\text{cand}} \leftarrow \emptyset$
-9:  For each coarse chunk $c_k \in C^*$ do:
-10:     $\mathcal{P}_{\text{cand}} \leftarrow \mathcal{P}_{\text{cand}} \cup \text{SliceIntoParagraphs}(c_k)$
-11: For each paragraph $p_i \in \mathcal{P}_{\text{cand}}$ do:
-12:     $s_i \leftarrow R_{CE}(q, p_i)$
-13: $\mathcal{S}_{\text{clean}} \leftarrow \text{AdaptiveFilterAndDedup}(\mathcal{P}_{\text{cand}}, \{s_i\}, \alpha, \delta, \tau_{\min})$
-14: $\mathcal{C}_{\text{dense}} \leftarrow \text{Concatenate}(\mathcal{S}_{\text{clean}})$
-15: $A \leftarrow \text{ReaderLLM}(\text{Prompt}(q, \mathcal{C}_{\text{dense}}))$
-16: Return $A, \mathcal{C}_{\text{dense}}$
-\end{lstlisting}
-\end{tcolorbox}
-\label{algo:elongrag_pipeline}
-\end{figure}
+\begin{algorithm}[H]
+\caption{Query-Adaptive Context Filtering and Semantic Deduplication}\label{alg:adaptive_filter}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Candidate paragraphs $\{p_i\}_{i=1}^M$, Relevance scores $\{s_i\}_{i=1}^M$, Selectivity $\alpha$, Dedup threshold $\delta$, Floor $\tau_{\min}$
+\STATE \textbf{Output:} Clean non-redundant passages $\mathcal{S}_{\text{clean}}$
+\STATE $\mu_R \gets \frac{1}{M} \sum_{i=1}^M s_i$
+\STATE $\sigma_R \gets \sqrt{\frac{1}{M} \sum_{i=1}^M (s_i - \mu_R)^2}$
+\STATE $\tau(q) \gets \max(\tau_{\min}, \mu_R - \alpha \cdot \sigma_R)$
+\STATE $\mathcal{P}_{\text{filtered}} \gets \{ (p_i, s_i) \mid s_i \ge \tau(q) \}$
+\STATE Sort $\mathcal{P}_{\text{filtered}}$ in descending order of score $s_i$
+\STATE $\mathcal{S}_{\text{clean}} \gets \emptyset$
+\FORALL{$(p_i, s_i) \in \mathcal{P}_{\text{filtered}}$}
+    \STATE $\text{duplicate} \gets \textbf{false}$
+    \FORALL{$p_j \in \mathcal{S}_{\text{clean}}$}
+        \IF{$\text{CosineSimilarity}(E(p_i), E(p_j)) \ge \delta$}
+            \STATE $\text{duplicate} \gets \textbf{true}$
+            \STATE \textbf{break}
+        \ENDIF
+    \ENDFOR
+    \IF{$\textbf{not } \text{duplicate}$}
+        \STATE $\mathcal{S}_{\text{clean}} \gets \mathcal{S}_{\text{clean}} \cup \{ p_i \}$
+    \ENDIF
+\ENDFOR
+\STATE \textbf{return} $\mathcal{S}_{\text{clean}}$
+\end{algorithmic}
+\end{algorithm}
 
-\begin{figure}[!t]
-\begin{tcolorbox}[algoframe, title={Algorithm 2: Query-Adaptive Filtering and Semantic Deduplication}]
-\begin{lstlisting}[language=Python, mathescape=true]
-Input: Candidate paragraphs $\{p_i\}_{i=1}^M$, Relevance scores $\{s_i\}_{i=1}^M$,
-       Tuning parameter $\alpha$, Deduplication threshold $\delta$, Floor $\tau_{\min}$
-Output: Clean non-redundant context passages $\mathcal{S}_{\text{clean}}$
-
-1:  $\mu_R \leftarrow \frac{1}{M} \sum_{i=1}^M s_i$
-2:  $\sigma_R \leftarrow \sqrt{\frac{1}{M} \sum_{i=1}^M (s_i - \mu_R)^2}$
-3:  $\tau(q) \leftarrow \max(\tau_{\min}, \mu_R - \alpha \cdot \sigma_R)$
-4:  $\mathcal{P}_{\text{filtered}} \leftarrow \{ (p_i, s_i) \mid s_i \ge \tau(q) \}$
-5:  Sort $\mathcal{P}_{\text{filtered}}$ in descending order of score $s_i$
-6:  $\mathcal{S}_{\text{clean}} \leftarrow \emptyset$
-7:  For each $(p_i, s_i) \in \mathcal{P}_{\text{filtered}}$ do:
-8:      is_duplicate $\leftarrow$ False
-9:      For each $p_j \in \mathcal{S}_{\text{clean}}$ do:
-10:         If $\text{CosineSimilarity}(E(p_i), E(p_j)) \ge \delta$ then:
-11:             is_duplicate $\leftarrow$ True; Break
-12:     If not is_duplicate then:
-13:         $\mathcal{S}_{\text{clean}} \leftarrow \mathcal{S}_{\text{clean}} \cup \{ p_i \}$
-14: Return $\mathcal{S}_{\text{clean}}$
-\end{lstlisting}
-\end{tcolorbox}
-\label{algo:adaptive_filter}
-\end{figure}
-
-% =============================================================
-% SECTION 4: IMPLEMENTATION AND EXPERIMENTAL SETUP
-% =============================================================
 \section{Implementation and Experimental Setup}
 
 \subsection{Software Frameworks and System Environment}
@@ -408,9 +379,6 @@ To prevent data leakage, the 50 multi-hop benchmark queries were partitioned int
     \item \textbf{Held-Out Evaluation Split (70\%, 35 queries):} Reserved exclusively for blind testing of prompt token savings, TTFT speedup, positional stress testing, and RAGAS quality evaluation.
 \end{itemize}
 
-% =============================================================
-% SECTION 5: RESULTS AND EVALUATION
-% =============================================================
 \section{Results and Evaluation}
 
 \subsection{Evaluation Metrics Definition}
@@ -418,20 +386,24 @@ The system was evaluated across six primary technical metrics:
 \begin{enumerate}
     \item \textbf{Prompt Token Savings (\%):} Relative reduction in prompt tokens:
     \begin{equation}
+    \label{eq:savings}
     \text{Savings} = \left( 1 - \frac{|\mathcal{C}_{\text{E-LongRAG}}|}{|\mathcal{C}_{\text{Baseline}}|} \right) \times 100\%
     \end{equation}
     \item \textbf{Pre-fill TTFT Speedup:} Factor reduction in decoder pre-fill latency: $\text{Speedup} = \text{TTFT}_{\text{base}} / \text{TTFT}_{\text{elong}}$.
     \item \textbf{Context Precision:} Fraction of prompt context tokens containing high-relevance evidence:
     \begin{equation}
+    \label{eq:precision}
     \text{Precision} = \frac{|\mathcal{C}_{\text{signal}}|}{|\mathcal{C}_{\text{total}}|}
     \end{equation}
     \item \textbf{Positional Recall (\%):} Binary fact extraction rate under varying haystack needle depths.
     \item \textbf{Exact Match (EM) \& Token F1:} Strict string identity and harmonic token overlap against ground truth facts:
     \begin{equation}
+    \label{eq:f1}
     F_1 = 2 \cdot \frac{\text{Precision}_{\text{tok}} \cdot \text{Recall}_{\text{tok}}}{\text{Precision}_{\text{tok}} + \text{Recall}_{\text{tok}}}
     \end{equation}
     \item \textbf{Harmonic RAGAS Quality Score:} Harmonic mean across Faithfulness, Answer Relevance, Context Precision, and Context Recall:
     \begin{equation}
+    \label{eq:ragas_harm}
     \text{RAGAS}_{\text{harm}} = \frac{4}{\frac{1}{P_{\text{ctx}}} + \frac{1}{R_{\text{ctx}}} + \frac{1}{\text{Faith}} + \frac{1}{\text{Relev}}}
     \end{equation}
 \end{enumerate}
@@ -440,8 +412,7 @@ The system was evaluated across six primary technical metrics:
 Table~\ref{tab:sota_comparison} compares E-LongRAG against Baseline LongRAG~\cite{longrag}, Short-Chunk DPR~\cite{sbert}, and LongLLMLingua~\cite{lostinmiddle}. E-LongRAG achieves the highest context precision ($94.2\%$), superior token savings ($94.9\%$), and near-instantaneous pre-fill latency ($\approx 100\text{ ms}$) on standard CPU hardware.
 
 \begin{table*}[!t]
-\caption{State-of-the-Art Quantitative Comparison on Held-Out Multi-Hop Queries}
-\label{tab:sota_comparison}
+\caption{State-of-the-Art Quantitative Comparison on Held-Out Multi-Hop Queries\label{tab:sota_comparison}}
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccc}
@@ -466,9 +437,8 @@ To evaluate the contribution of each individual module, we conducted an ablation
     \item \textbf{Configuration 4 (Full E-LongRAG):} Activates dynamic thresholding $\tau(q)$ and cosine deduplication $\delta$, compressing prompt size to \textbf{260.8 tokens} ($94.9\%$ savings) and boosting context precision to \textbf{95.0\%}.
 \end{itemize}
 
-\begin{table}[!h]
-\caption{Component-Wise Architectural Ablation Benchmarks}
-\label{tab:ablation_study}
+\begin{table}[!t]
+\caption{Component-Wise Architectural Ablation Benchmarks\label{tab:ablation_study}}
 \centering
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
@@ -487,7 +457,7 @@ To evaluate the contribution of each individual module, we conducted an ablation
 \begin{figure}[!b]
 \centering
 \includegraphics[width=\columnwidth]{../../plots/ragas_multimetric_comparison.png}
-\caption{Multi-Dimensional Factual Quality Comparison across RAGAS Dimensions: Baseline LongRAG vs. Proposed E-LongRAG.}
+\caption{Multi-dimensional factual quality comparison across RAGAS dimensions: Baseline LongRAG vs. Proposed E-LongRAG.}
 \label{fig:ragas_chart}
 \end{figure}
 
@@ -497,13 +467,12 @@ Fig.~\ref{fig:mitm_chart} and Table~\ref{tab:mitm_table} document the results of
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{../../plots/lost_in_the_middle_curve.png}
-\caption{Positional Lost-in-the-Middle Robustness Curve: Baseline LongRAG attention sink collapse at 50\% depth vs. E-LongRAG position invariance.}
+\caption{Positional Lost-in-the-Middle robustness curve: Baseline LongRAG attention sink collapse at 50\% depth vs. E-LongRAG position invariance.}
 \label{fig:mitm_chart}
 \end{figure}
 
-\begin{table}[!h]
-\caption{Positional Telemetry Telemetry Across Haystack Depths}
-\label{tab:mitm_table}
+\begin{table}[!t]
+\caption{Positional Telemetry Across Haystack Depths\label{tab:mitm_table}}
 \centering
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{cccccc}
@@ -520,22 +489,47 @@ $100\%$ (Tail) & $0.89\times$ & $78.0\%$ & LOW & $0.9812$ & $\mathbf{100.0\%}$ \
 }
 \end{table}
 
+\subsection{Retrieval Sampling Strategies Ablation}
+Table~\ref{tab:sampling_ablation} details the comparative evaluation of post-retrieval sampling heuristics against our proposed query-adaptive statistical filter. We formulate an \textit{Intra-Context Diversity} metric $\text{Div}(\mathcal{S})$ to evaluate lexical and semantic distinctiveness:
+\begin{equation}
+\label{eq:diversity_metric}
+\text{Div}(\mathcal{S}) = \frac{1}{|\mathcal{S}|(|\mathcal{S}|-1)} \sum_{i \ne j} \left( 1 - \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2} \right)
+\end{equation}
+While deterministic Top-$K$ captures high score mass, it suffers from low diversity ($0.1925$) because top-ranked paragraphs often originate from identical sections. In contrast, our Adaptive Filter achieves optimal prompt compression ($94.9\%$ savings) while maintaining high diversity ($0.3078$) and zero lost evidence.
+
+\begin{table}[!t]
+\caption{Retrieval Sampling Strategies Ablation Benchmarks\label{tab:sampling_ablation}}
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Sampling Strategy} & \textbf{Passages} & \textbf{Tokens} & \textbf{Savings} & \textbf{Diversity} & \textbf{Latency} \\
+\midrule
+Deterministic Top-$K$ ($K=2$) & $2$ & $590.0$ & $72.8\%$ & $0.1925$ & $0.01\text{ ms}$ \\
+Nucleus Top-$p$ ($p=0.85$) & $4$ & $1,962.0$ & $10.0\%$ & $0.4888$ & $0.07\text{ ms}$ \\
+Boltzmann ($T=0.5, K=2$) & $2$ & $487.0$ & $77.6\%$ & $0.7902$ & $0.74\text{ ms}$ \\
+MMR ($\lambda=0.7, K=2$) & $2$ & $590.0$ & $72.8\%$ & $0.2850$ & $294.35\text{ ms}$ \\
+\textbf{Adaptive Filter (Proposed)} & $\mathbf{2}$ & $\mathbf{260.8}$ & $\mathbf{94.9\%}$ & $\mathbf{0.3078}$ & $\mathbf{50.30\text{ ms}}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
 \subsection{Sensitivity Sweep and Pareto Efficiency Frontier}
 Fig.~\ref{fig:pareto_chart} illustrates the 2D parameter grid sweep over selectivity multiplier $\alpha \in [0.0, 1.5]$ and deduplication threshold $\delta \in [0.70, 0.95]$. The non-dominated Pareto frontier points reveal the trade-off between token savings and factual precision. Configuration $(\alpha = 0.50, \delta = 0.85)$ emerges as the golden operating point, delivering $94.6\%$ token reduction with $100.0\%$ ground-truth recall.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{../../plots/pareto_tradeoff_curve.png}
-\caption{Pareto Sensitivity Trade-Off Frontier: Token savings versus context precision across the 42-point $(\alpha \times \delta)$ parameter grid.}
+\caption{Pareto sensitivity trade-off frontier: token savings versus context precision across the 42-point $(\alpha \times \delta)$ parameter grid.}
 \label{fig:pareto_chart}
 \end{figure}
 
 \subsection{Multi-Reader Engine Evaluation}
 Table~\ref{tab:readers_eval} evaluates the filtered 260-token context across three reader engines. The local CPU reader generates answers in $4.12\text{ ms}$ at zero dollar cost, while cloud API readers (Gemini 1.5 Flash and Groq LLaMA-3.1-8B) achieve fluent synthesis with 95\% lower token costs.
 
-\begin{table}[!h]
-\caption{Multi-Reader Evaluation on Filtered Context ($260$ Tokens)}
-\label{tab:readers_eval}
+\begin{table}[!t]
+\caption{Multi-Reader Evaluation on Filtered Context ($260$ Tokens)\label{tab:readers_eval}}
 \centering
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
@@ -550,9 +544,6 @@ Groq LLaMA-3.1-8B-Instant & Cloud LPU & $124.50\text{ ms}$ & $<\$0.01$ & $0.90$ 
 }
 \end{table}
 
-% =============================================================
-% SECTION 6: CONCLUSION, FUTURE WORK, AND LIMITATIONS
-% =============================================================
 \section{Conclusion, Future Work, and Limitations}
 
 \subsection{Conclusion}
@@ -574,23 +565,31 @@ Future research directions include:
     \item \textbf{Multi-Modal LongRAG:} Extending hierarchical slicing and dynamic filtering to interleaved image-text technical documentation.
 \end{enumerate}
 
-% =============================================================
-% SECTION 7: ACKNOWLEDGMENTS AND CONTRIBUTIONS
-% =============================================================
 \section{Individual Team Contributions}
-The project workload was distributed equally across team members:
+The project workload across both Midsem and Endsem phases was distributed equally among the three team members:
+
 \begin{itemize}
-    \item \textbf{Pranav Vinodh:} Formulated retrieval sampling ablation suite; designed intra-context diversity metric $\text{Div}(\mathcal{S})$; implemented adaptive context filter $\tau(q)$ and cosine deduplication; engineered the 10-tab Streamlit dashboard; formulated the 42-point 2D sensitivity Pareto sweeper.
-    \item \textbf{Durga Sai Pavan G.:} Implemented HyDE query expansion; built pure-Python Okapi BM25 and hybrid RRF retriever; built multi-reader engine; curated multi-hop academic benchmark dataset; authored automated unit test suite.
-    \item \textbf{Sameer:} Implemented 4k chunking and paragraph slicer; built FAISS normalized vector store; formulated positional lost-in-the-middle stress tester; implemented automated RAGAS quality evaluator; conducted model footprint profiling.
+    \item \textbf{Pranav Vinodh:}
+    \begin{itemize}
+        \item \textit{Midsem Deliverables:} Intra-chunk paragraph slicing pipeline; dynamic statistical threshold formulation $\tau(q) = \max(\tau_{\min}, \mu_R - \alpha \sigma_R)$; cosine semantic deduplication module ($\delta = 0.85$); baseline LongRAG prompt profiling.
+        \item \textit{Endsem Deliverables:} Retrieval sampling ablation suite (Deterministic Top-$K$, Nucleus Top-$p$, Boltzmann, MMR) in \texttt{sampling.py}; mathematical formulation and empirical testing of the Intra-Context Diversity metric $\text{Div}(\mathcal{S})$; 42-point 2D sensitivity Pareto sweeper in \texttt{sensitivity.py}; engineering of the comprehensive 10-tab diagnostic Streamlit dashboard in \texttt{app.py}.
+    \end{itemize}
+    \item \textbf{Durga Sai Pavan Gangabattula:}
+    \begin{itemize}
+        \item \textit{Midsem Deliverables:} Generative HyDE query expansion module in \texttt{hyde.py}; benchmark multi-hop academic QA dataset curation and JSON caching in \texttt{dataset\_loader.py}; modular unit test harness.
+        \item \textit{Endsem Deliverables:} Pure-Python Okapi BM25 indexer with Robertson-Spärck Jones IDF; Hybrid dense-lexical retrieval engine with Reciprocal Rank Fusion ($c=60$) in \texttt{hybrid\_search.py}; multi-reader orchestration engine supporting Local CPU, Google Gemini 1.5, and Groq LPUs in \texttt{reader.py}; unit test suites for hybrid search and reader agnosticism.
+    \end{itemize}
+    \item \textbf{Sameer:}
+    \begin{itemize}
+        \item \textit{Midsem Deliverables:} Macro-level coarse 4k chunking in \texttt{chunker.py}; FAISS inner-product vector store indexing in \texttt{vector\_store.py}; system runtime memory and pre-fill latency profiling.
+        \item \textit{Endsem Deliverables:} Positional ``Lost-in-the-Middle'' synthetic stress-testing framework across 10,000-token contexts in \texttt{lost\_in\_the\_middle.py}; automated multi-dimensional RAGAS quality evaluator (Faithfulness, Answer Relevance, Context Precision, Context Recall, Exact Match, Token F1) in \texttt{ragas\_eval.py}; bi-encoder footprint and cross-encoder architecture model sizing ablation.
+    \end{itemize}
 \end{itemize}
 
-% =============================================================
-% REFERENCES
-% =============================================================
+\section*{Acknowledgment}
+The authors express their sincere gratitude to the course instructors and teaching assistants of Course IT 488: Large Language Models, Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal, for their constructive feedback and continuous guidance throughout the duration of this research.
+
 \begin{thebibliography}{10}
-\footnotesize
-\setlength{\itemsep}{1.0pt}
 \bibitem{longrag}
 Z.~Jiang, X.~Ma, and W.~Chen, ``LongRAG: Enhancing retrieval-augmented generation with long-context LLMs,'' \textit{arXiv preprint arXiv:2406.15319}, 2024.
 
@@ -621,5 +620,19 @@ S.~Xiao, Z.~Liu, P.~Zhang, and N.~Muennighoff, ``C-Pack: Packaged resources to a
 \bibitem{ragas}
 S.~Es, J.~James, L.~Espinosa-Anke, and S.~Schockaert, ``RAGAS: Automated evaluation of retrieval augmented generation,'' in \textit{Proc. of the 18th Conference of the European Chapter of the Association for Computational Linguistics (EACL)}, pp.~150--158, 2024.
 \end{thebibliography}
+
+\begin{IEEEbiographynophoto}{Pranav Vinodh}
+is currently pursuing the B.Tech.\ degree in Information Technology with the Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal, India. His research interests include Retrieval-Augmented Generation, natural language processing, and prompt optimization.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Durga Sai Pavan Gangabattula}
+is currently pursuing the B.Tech.\ degree in Information Technology with the Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal, India. His research interests include hybrid information retrieval, large language model inference acceleration, and dense vector search.
+\end{IEEEbiographynophoto}
+
+\begin{IEEEbiographynophoto}{Sameer}
+is currently pursuing the B.Tech.\ degree in Information Technology with the Department of Information Technology, National Institute of Technology Karnataka (NITK), Surathkal, India. His research interests include long-context transformer architectures, neural attention mechanics, and automated evaluation frameworks for generative AI.
+\end{IEEEbiographynophoto}
+
+\vfill
 
 \end{document}

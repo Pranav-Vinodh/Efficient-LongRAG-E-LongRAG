@@ -52,10 +52,11 @@
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Part 1: Foundations \& Midsem Architecture}}
-                \begin{itemize}\setlength\itemsep{3pt}
+                \footnotesize
+                \begin{itemize}\setlength\itemsep{1.5pt}
                     \item \textbf{Problem Motivation}: Short-Chunk Fragmentation vs. LongRAG Prompt Bloat.
                     \item \textbf{LongRAG Bottlenecks}: $O(N^2)$ TTFT Attention Latency and $94\%$ Distractor Noise.
-                    \item \textbf{Midsem Pipeline}: HyDE Query Expansion, Intra-Chunk Paragraph Slicing, MiniLM Joint Cross-Attention Reranking.
+                    \item \textbf{Midsem Pipeline}: HyDE Expansion, Paragraph Slicing, MiniLM Reranking.
                     \item \textbf{Adaptive Context Filtering}: Dynamic Score Cutoff $\tau(q)$ and Cosine Deduplication $\delta=0.85$.
                     \item \textbf{Midsem Empirical Results}: $94.9\%$ Prompt Compression and $19.7\times$ Pre-fill Speedup.
                 \end{itemize}
@@ -64,13 +65,14 @@
         
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Part 2: New Endsem Innovations \& Novelty}}
-                \begin{itemize}\setlength\itemsep{3pt}
-                    \item \textbf{Innovation 1}: Retrieval Sampling Strategies Ablation \& Intra-Context Diversity Metric $\text{Div}(\mathcal{S})$.
-                    \item \textbf{Innovation 2}: Lightweight Embedding Ablation \& Hybrid BM25+RRF Lexical-Dense Search.
-                    \item \textbf{Innovation 3}: Positional ``Lost-in-the-Middle'' Stress Testing (10k Tokens, U-Curve vs Invariance).
-                    \item \textbf{Innovation 4}: Automated RAGAS Quality Metrics, Exact Match (EM) \& Token F1.
+                \footnotesize
+                \begin{itemize}\setlength\itemsep{1.5pt}
+                    \item \textbf{Innovation 1}: Retrieval Sampling Suite \& Diversity Metric $\text{Div}(\mathcal{S})$.
+                    \item \textbf{Innovation 2}: Lightweight Embedding \& Hybrid BM25+RRF Search.
+                    \item \textbf{Innovation 3}: Positional ``Lost-in-the-Middle'' Stress Testing (10k Tokens).
+                    \item \textbf{Innovation 4}: Automated RAGAS Quality Metrics, EM \& Token F1.
                     \item \textbf{Innovation 5}: Cross-Encoder Sizing \& 42-Point Pareto Sensitivity Frontier.
-                    \item \textbf{Innovation 6}: Multi-Reader Engine (CPU vs Gemini vs Groq) \& 10-Tab Web Dashboard.
+                    \item \textbf{Innovation 6}: Multi-Reader Engine (CPU vs Gemini vs Groq) \& 10-Tab Dashboard.
                     \item \textbf{Equal Team Contributions} across all 3 members.
                 \end{itemize}
             \end{block}
@@ -207,25 +209,36 @@
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{HyDE Query Expansion}}
+                \footnotesize
                 Synthesize hypothetical passage $\hat{d} \sim P_{\text{LM}}(\cdot \mid q)$:
-                $$v_{\text{search}} = \frac{E(\hat{d})}{\|E(\hat{d})\|_2} \in \mathbb{R}^{384}$$
+                \vspace{-2pt}
+                \[ v_{\text{search}} = \frac{E(\hat{d})}{\|E(\hat{d})\|_2} \in \mathbb{R}^{384} \]
+                \vspace{-4pt}
                 Eliminates vocabulary mismatch before FAISS search.
             \end{block}
 
             \begin{block}{\textbf{Intra-Chunk Paragraph Slicing}}
+                \footnotesize
                 Decouples 4k retrieval units into reranking units:
-                $$c_k \longrightarrow \{ p_{k,1}, p_{k,2}, \dots, p_{k,m_k} \}$$
+                \vspace{-2pt}
+                \[ c_k \longrightarrow \{ p_{k,1}, p_{k,2}, \dots, p_{k,m_k} \} \]
+                \vspace{-4pt}
                 Bypasses the strict 512-token BERT length bottleneck.
             \end{block}
         \end{column}
         
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{MiniLM Cross-Attention Reranking}}
-                Concatenates query and paragraph for full joint attention across all layers:
-                $$\text{Input} = \text{[CLS]} \circ q \circ \text{[SEP]} \circ p \circ \text{[SEP]}$$
+                \footnotesize
+                Concatenates query and paragraph for joint attention:
+                \vspace{-2pt}
+                \[ \text{Input} = \text{[CLS]} \circ q \circ \text{[SEP]} \circ p \circ \text{[SEP]} \]
+                \vspace{-4pt}
                 Classification head computes calibrated relevance:
-                $$R_{CE}(q, p) = \sigma(W \cdot h_{\text{[CLS]}} + b) \in [0, 1]$$
-                Captures word-order, negation, and token dependencies lost in bi-encoder dot products.
+                \vspace{-2pt}
+                \[ R_{CE}(q, p) = \sigma(W \cdot h_{\text{[CLS]}} + b) \in [0, 1] \]
+                \vspace{-4pt}
+                Captures token dependencies lost in bi-encoders.
             \end{block}
         \end{column}
     \end{columns}
@@ -267,8 +280,7 @@
 % Slide 8: Midsem Core Empirical Benchmarks
 % ---------------------------------------------------------
 \begin{frame}{Part 1: Midsem Core Empirical Benchmarks (25 Multi-Hop Queries)}
-    \begin{table}[!t]
-    \centering
+    \begin{center}
     \scriptsize
     \begin{tabular}{lcccccc}
     \toprule
@@ -280,17 +292,20 @@
     \textbf{4. Full E-LongRAG (Proposed)} & $\mathbf{260.8}$ & $\mathbf{94.9\%}$ & $\mathbf{472.41\text{ ms}}$ & $\mathbf{\approx 100\text{ ms}}$ & $\mathbf{\approx 572.41\text{ ms}}$ & $\mathbf{95.0\%}$ \\
     \bottomrule
     \end{tabular}
-    \end{table}
+    \end{center}
 
+    \vspace{0.1cm}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{19.7$\times$ TTFT Latency Reduction}}
+                \footnotesize
                 Compressing prompts from 5,134 to 260 tokens reduces decoder self-attention pre-fill from $\approx 2,000\text{ ms}$ to $\approx 100\text{ ms}$.
             \end{block}
         \end{column}
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{Computational Offloading Principle}}
-                Spending $\approx 460\text{ ms}$ on a lightweight 22M cross-encoder saves $\approx 1,900\text{ ms}$ on the heavy downstream LLM reader ($3.5\times$ speedup on CPU, $14\times$ on GPU).
+                \footnotesize
+                Spending $\approx 460\text{ ms}$ on a lightweight 22M cross-encoder saves $\approx 1,900\text{ ms}$ on downstream LLM reader ($3.5\times$ speedup on CPU, $14\times$ on GPU).
             \end{block}
         \end{column}
     \end{columns}
@@ -308,9 +323,10 @@
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
             \begin{block}{\textbf{What We Built After Midsem}}
-                \begin{enumerate}\setlength\itemsep{3pt}
+                \footnotesize
+                \begin{enumerate}\setlength\itemsep{1.5pt}
                     \item \textbf{Sampling Ablations}: Top-K, Nucleus, Boltzmann, MMR vs Adaptive Filter.
-                    \item \textbf{Hybrid Search}: Pure-Python Okapi BM25 + FAISS + Reciprocal Rank Fusion (RRF $c=60$).
+                    \item \textbf{Hybrid Search}: Pure-Python Okapi BM25 + FAISS + Reciprocal Rank Fusion ($c=60$).
                     \item \textbf{Positional Stress Test}: 10k-token Lost-in-the-Middle evaluation across 5 depths.
                     \item \textbf{RAGAS Evaluation}: Faithfulness, Relevance, Precision, Recall, EM, Token F1.
                     \item \textbf{Pareto Sensitivity Frontier}: 42-point 2D grid sweep ($\alpha \times \delta$).
@@ -321,7 +337,8 @@
         
         \begin{column}{0.48\textwidth}
             \begin{alertblock}{\textbf{Core Research Novelty}}
-                \begin{itemize}\setlength\itemsep{3pt}
+                \footnotesize
+                \begin{itemize}\setlength\itemsep{1.5pt}
                     \item \textbf{Novelty 1}: Fusing lexical BM25 with dense vectors resolves neural retrieval failures on technical acronyms.
                     \item \textbf{Novelty 2}: Formulated Intra-Context Diversity metric $\text{Div}(\mathcal{S})$ to quantify prompt redundancy.
                     \item \textbf{Novelty 3}: \textbf{100\% Position Invariance} proven: E-LongRAG immunizes readers against lost-in-the-middle degradation.
@@ -336,8 +353,7 @@
 % Slide 10: Endsem Innovation 1: Retrieval Sampling Strategies Ablation
 % ---------------------------------------------------------
 \begin{frame}{Endsem Innovation 1: Retrieval Sampling Strategies Ablation Suite}
-    \begin{table}[!t]
-    \centering
+    \begin{center}
     \scriptsize
     \begin{tabular}{lccccc}
     \toprule
@@ -350,17 +366,22 @@
     \textbf{Adaptive Filter (Proposed)} & $\mathbf{2}$ & $\mathbf{260.8}$ & $\mathbf{94.9\%}$ & $\mathbf{0.3078}$ & $\mathbf{50.30\text{ ms}}$ \\
     \bottomrule
     \end{tabular}
-    \end{table}
+    \end{center}
 
+    \vspace{0.1cm}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
-            \begin{block}{\textbf{Intra-Context Diversity Formulation}}
-                $$\text{Div}(\mathcal{S}) = \frac{1}{|\mathcal{S}|(|\mathcal{S}|-1)} \sum_{i \ne j} \left( 1 - \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2} \right)$$
+            \begin{block}{\textbf{Intra-Context Diversity Metric}}
+                \centering
+                \vspace{2pt}
+                \resizebox{0.95\linewidth}{!}{$\displaystyle \text{Div}(\mathcal{S}) = \frac{1}{|\mathcal{S}|(|\mathcal{S}|-1)} \sum_{i \ne j} \left( 1 - \frac{E(p_i) \cdot E(p_j)}{\|E(p_i)\|_2 \|E(p_j)\|_2} \right)$}
+                \vspace{2pt}
             \end{block}
         \end{column}
         \begin{column}{0.48\textwidth}
             \begin{alertblock}{\textbf{Scientific Novelty}}
-                Proved deterministic Top-$K$ suffers from low diversity ($0.1925$) due to adjacent duplicate chunks, whereas our Adaptive Filter optimizes both compression ($94.9\%$) and diversity.
+                \footnotesize
+                Proved deterministic Top-$K$ suffers from low diversity ($0.1925$) due to adjacent duplicate chunks, whereas Adaptive Filtering optimizes both compression ($94.9\%$) and diversity.
             \end{alertblock}
         \end{column}
     \end{columns}
@@ -443,35 +464,37 @@
 % ---------------------------------------------------------
 \begin{frame}{Endsem Innovation 4: Automated RAGAS Quality Metrics}
     \begin{columns}[onlytextwidth,T]
-        \begin{column}{0.54\textwidth}
-            \begin{table}[!t]
-            \centering
-            \scriptsize
-            \begin{tabular}{lccc}
-            \toprule
-            \textbf{Dimension} & \textbf{Baseline LongRAG} & \textbf{Proposed E-LongRAG} & \textbf{Delta} \\
-            \midrule
-            Context Precision & $0.241$ & $\mathbf{0.942}$ & $\mathbf{+290.9\%}$ \\
-            Context Recall & $0.950$ & $\mathbf{0.960}$ & $+1.1\%$ \\
-            Faithfulness & $0.720$ & $\mathbf{0.980}$ & $+36.1\%$ \\
-            Answer Relevance & $0.680$ & $\mathbf{0.950}$ & $+39.7\%$ \\
-            Exact Match (EM) & $0.400$ & $\mathbf{0.900}$ & $\mathbf{+125.0\%}$ \\
-            Token F1 & $0.540$ & $\mathbf{0.880}$ & $+63.0\%$ \\
-            \midrule
-            \textbf{Harmonic RAGAS} & $0.534$ & $\mathbf{0.957}$ & $\mathbf{+79.2\%}$ \\
-            \bottomrule
-            \end{tabular}
-            \end{table}
+        \begin{column}{0.51\textwidth}
+            \begin{block}{\textbf{RAGAS Multi-Metric Benchmark}}
+                \centering
+                \scriptsize
+                \setlength{\tabcolsep}{3.5pt}
+                \begin{tabular}{lccc}
+                \toprule
+                \textbf{Dimension} & \textbf{Baseline LongRAG} & \textbf{E-LongRAG} & \textbf{Delta} \\
+                \midrule
+                Context Precision & $0.241$ & $\mathbf{0.942}$ & $\mathbf{+290.9\%}$ \\
+                Context Recall & $0.950$ & $\mathbf{0.960}$ & $+1.1\%$ \\
+                Faithfulness & $0.720$ & $\mathbf{0.980}$ & $+36.1\%$ \\
+                Answer Relevance & $0.680$ & $\mathbf{0.950}$ & $+39.7\%$ \\
+                Exact Match (EM) & $0.400$ & $\mathbf{0.900}$ & $\mathbf{+125.0\%}$ \\
+                Token F1 & $0.540$ & $\mathbf{0.880}$ & $+63.0\%$ \\
+                \midrule
+                \textbf{Harmonic RAGAS} & $0.534$ & $\mathbf{0.957}$ & $\mathbf{+79.2\%}$ \\
+                \bottomrule
+                \end{tabular}
+            \end{block}
         \end{column}
         
-        \begin{column}{0.44\textwidth}
-            \begin{block}{\textbf{Signal-to-Noise Breakthrough}}
-                \begin{itemize}\setlength\itemsep{3pt}
-                    \item Baseline Context Precision is only \textbf{0.241} because 94\% of prompt tokens are irrelevant distractors.
-                    \item E-LongRAG boosts Precision to \textbf{0.942} (+290.9\%) while preserving 96\% Context Recall.
-                    \item Faithfulness reaches \textbf{0.980}, preventing hallucinated answers.
+        \begin{column}{0.46\textwidth}
+            \begin{alertblock}{\textbf{Signal-to-Noise Breakthrough}}
+                \footnotesize
+                \begin{itemize}\setlength\itemsep{2pt}
+                    \item \textbf{Context Precision}: Surges from \textbf{0.241} to \textbf{0.942} (+290.9\%) because 94\% of prompt distractor tokens are pruned.
+                    \item \textbf{Faithfulness}: Reaches \textbf{0.980}, preventing hallucinated answers.
+                    \item \textbf{Answer Accuracy}: Exact Match (EM) jumps from \textbf{0.40} to \textbf{0.90} (+125\%).
                 \end{itemize}
-            \end{block}
+            \end{alertblock}
         \end{column}
     \end{columns}
 \end{frame}
@@ -530,29 +553,32 @@
 % ---------------------------------------------------------
 \begin{frame}{Endsem Innovation 6: Multi-Reader Engine Benchmarks}
     \begin{columns}[onlytextwidth,T]
-        \begin{column}{0.54\textwidth}
-            \begin{table}[!t]
-            \centering
-            \scriptsize
-            \begin{tabular}{lcccc}
-            \toprule
-            \textbf{Reader Engine} & \textbf{Hardware} & \textbf{Latency} & \textbf{Payload} & \textbf{Cost/1k Qs} \\
-            \midrule
-            Local Zero-GPU CPU & Host CPU & $\mathbf{4.12\text{ ms}}$ & $260\text{ tok}$ & $\mathbf{\$0.00}$ \\
-            Google Gemini 1.5 Flash & Cloud TPU & $482.10\text{ ms}$ & $260\text{ tok}$ & $<\$0.01$ \\
-            Groq LLaMA-3.1-8B & Cloud LPU & $124.50\text{ ms}$ & $260\text{ tok}$ & $<\$0.01$ \\
-            \bottomrule
-            \end{tabular}
-            \end{table}
+        \begin{column}{0.51\textwidth}
+            \begin{block}{\textbf{Reader Hardware Latency \& Economics}}
+                \centering
+                \scriptsize
+                \setlength{\tabcolsep}{2.5pt}
+                \begin{tabular}{lcccc}
+                \toprule
+                \textbf{Reader Engine} & \textbf{Hardware} & \textbf{Latency} & \textbf{Payload} & \textbf{Cost/1k} \\
+                \midrule
+                Local Zero-GPU CPU & Host CPU & $\mathbf{4.12\text{ ms}}$ & $260\text{ tok}$ & $\mathbf{\$0.00}$ \\
+                Google Gemini 1.5 & Cloud TPU & $482.10\text{ ms}$ & $260\text{ tok}$ & $<\$0.01$ \\
+                Groq LLaMA-3.1-8B & Cloud LPU & $124.50\text{ ms}$ & $260\text{ tok}$ & $<\$0.01$ \\
+                \bottomrule
+                \end{tabular}
+            \end{block}
 
             \begin{block}{\textbf{Reader Agnosticism}}
+                \footnotesize
                 All readers synthesize identical, accurate multi-hop answers from E-LongRAG's filtered 260-token context without hallucinations.
             \end{block}
         \end{column}
         
-        \begin{column}{0.44\textwidth}
-            \begin{alertblock}{\textbf{Operational Cost Advantages}}
-                \begin{itemize}\setlength\itemsep{3pt}
+        \begin{column}{0.46\textwidth}
+            \begin{alertblock}{\textbf{Operational Advantages}}
+                \footnotesize
+                \begin{itemize}\setlength\itemsep{2pt}
                     \item \textbf{Local CPU}: $<5\text{ ms}$ response with zero dollar API cost.
                     \item \textbf{Cloud APIs}: $95\%$ cheaper than raw LongRAG prompts.
                     \item \textbf{High Reliability}: Zero rate limits or network latency bottleneck.
