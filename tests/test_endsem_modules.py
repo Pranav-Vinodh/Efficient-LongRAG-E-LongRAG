@@ -9,8 +9,14 @@ Comprehensive Automated Unit Tests for Endsem Evaluation Modules:
 7. Integrated E-LongRAG Pipeline Endsem Methods (src/pipeline.py)
 """
 
+import os
+import sys
 import unittest
 import numpy as np
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src.hybrid_search import BM25Index, HybridRetriever
 from src.embedding_ablation import EmbeddingAblator
 from src.lost_in_the_middle import LostInTheMiddleStressTester

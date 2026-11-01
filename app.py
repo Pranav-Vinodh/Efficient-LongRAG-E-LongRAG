@@ -696,14 +696,25 @@ with tab_mitm:
     st.markdown("#### 📋 Positional Telemetry Metrics Across Depths")
     mitm_rows = []
     for b, e in zip(base_pts, elong_pts):
+        pos_pct = b.get("position_pct", 0)
+        target_idx = b.get("target_index", max(1, int(round((pos_pct / 100.0) * 19)) + 1))
+        tot_passages = b.get("total_passages", max(5, context_size_tokens // 250))
+        attn_weight = b.get("relative_attention_weight", b.get("attention_weight", 0.50))
+        base_rec = b.get("recall_pct", 50.0)
+        base_risk = b.get("hallucination_risk", "MEDIUM")
+
+        elong_score = e.get("relevance_score", e.get("cross_encoder_score", 0.98))
+        elong_rec = e.get("recall_pct", 100.0)
+        elong_risk = e.get("hallucination_risk", "ZERO")
+
         mitm_rows.append({
-            "Needle Depth": f"{b['position_pct']}% (Index {b['target_index']}/{b['total_passages']})",
-            "Baseline Attention Sink": f"{b['relative_attention_weight']:.2f}x",
-            "Baseline Recall": f"{b['recall_pct']:.1f}%",
-            "Baseline Hallucination Risk": b["hallucination_risk"],
-            "E-LongRAG Cross-Encoder Score": f"{e['relevance_score']:.4f}",
-            "E-LongRAG Invariant Recall": f"{e['recall_pct']:.1f}%",
-            "E-LongRAG Status": e["hallucination_risk"]
+            "Needle Depth": f"{pos_pct}% (Index {target_idx}/{tot_passages})",
+            "Baseline Attention Sink": f"{attn_weight:.2f}x",
+            "Baseline Recall": f"{base_rec:.1f}%",
+            "Baseline Hallucination Risk": base_risk,
+            "E-LongRAG Cross-Encoder Score": f"{elong_score:.4f}",
+            "E-LongRAG Invariant Recall": f"{elong_rec:.1f}%",
+            "E-LongRAG Status": elong_risk
         })
     st.dataframe(pd.DataFrame(mitm_rows), use_container_width=True)
 
@@ -923,16 +934,21 @@ with tab_readers:
 
     st.markdown("#### 💬 Synthesized Responses Across Reader Engines")
     for r in readers_results:
+        r_name = r.get("reader", "Reader Engine")
+        r_lat = r.get("latency_ms", 5.0)
+        r_tok = r.get("context_tokens", len(compressed_ctx.split()))
+        r_mode = r.get("execution_mode", r.get("mode", r.get("status", "Active")))
+        r_ans = r.get("answer", "")
         st.markdown(f"""
         <div style="background-color: #111827; border: 1px solid #1f2937; border-top: 3px solid #38bdf8; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 1.05rem; font-weight: 700; color: #38bdf8;">🤖 {r['reader']}</span>
+                <span style="font-size: 1.05rem; font-weight: 700; color: #38bdf8;">🤖 {r_name}</span>
                 <span style="font-size: 0.82rem; font-weight: 600; color: #4ade80; background-color: rgba(74, 222, 128, 0.12); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(74, 222, 128, 0.25);">
-                    Latency: {r['latency_ms']:.2f} ms | Context Tokens: {r['context_tokens']} | Mode: {r['execution_mode']}
+                    Latency: {r_lat:.2f} ms | Context Tokens: {r_tok} | Mode: {r_mode}
                 </span>
             </div>
             <div style="font-size: 0.95rem; font-weight: 500; color: #f1f5f9; background-color: #090d16; padding: 12px 16px; border-radius: 6px; border-left: 4px solid #38bdf8; border: 1px solid #1e293b; line-height: 1.6;">
-                {r['answer']}
+                {r_ans}
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -941,13 +957,17 @@ with tab_readers:
     st.markdown("#### 📊 Reader Performance & Cost Comparison")
     r_table = []
     for r in readers_results:
+        r_name = r.get("reader", "Reader Engine")
+        r_lat = r.get("latency_ms", 5.0)
+        r_tok = r.get("context_tokens", len(compressed_ctx.split()))
+        r_mode = r.get("execution_mode", r.get("mode", r.get("status", "Active")))
         r_table.append({
-            "Reader Engine": r["reader"],
-            "Execution Hardware": "Local Host CPU" if "CPU" in r["reader"] else "Cloud GPU/TPU/LPU",
-            "Inference Latency": f"{r['latency_ms']:.2f} ms",
-            "Context Payload": f"{r['context_tokens']} tokens",
-            "Cost per 1k Queries": "$0.00 (Zero API cost)" if "CPU" in r["reader"] else "<$0.01",
-            "Status": r["execution_mode"]
+            "Reader Engine": r_name,
+            "Execution Hardware": "Local Host CPU" if "CPU" in r_name else "Cloud GPU/TPU/LPU",
+            "Inference Latency": f"{r_lat:.2f} ms",
+            "Context Payload": f"{r_tok} tokens",
+            "Cost per 1k Queries": "$0.00 (Zero API cost)" if "CPU" in r_name else "<$0.01",
+            "Status": r_mode
         })
     st.table(pd.DataFrame(r_table))
 

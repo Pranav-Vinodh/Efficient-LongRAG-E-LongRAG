@@ -66,12 +66,16 @@ class MultiReaderEngine:
             answer = f"Based on retrieved evidence: {lines[0]}" if lines else "Synthesized factual answer from verified context."
 
         latency_ms = (time.time() - start_t) * 1000.0
+        ctx_tok = len(context.split())
         return {
             "reader": "Local CPU Reader",
             "answer": answer,
             "latency_ms": round(latency_ms, 2),
             "token_count": len(answer.split()),
-            "mode": "Local CPU (Deterministic)"
+            "context_tokens": ctx_tok,
+            "mode": "Local CPU (Deterministic)",
+            "execution_mode": "Local CPU (Deterministic)",
+            "status": "Local CPU (Deterministic)"
         }
 
     def generate_gemini(self, query: str, context: str) -> Dict[str, Any]:
@@ -81,6 +85,7 @@ class MultiReaderEngine:
         """
         start_t = time.time()
         api_key = self.gemini_api_key
+        ctx_tok = len(context.split())
 
         if not api_key:
             # Simulated realistic response
@@ -93,6 +98,9 @@ class MultiReaderEngine:
                 "answer": gemini_ans,
                 "latency_ms": round(lat, 2),
                 "token_count": len(gemini_ans.split()),
+                "context_tokens": ctx_tok,
+                "mode": "Simulated (Free Tier)",
+                "execution_mode": "Simulated (Free Tier)",
                 "status": "Simulated (Set GEMINI_API_KEY for live endpoint)"
             }
 
@@ -122,6 +130,9 @@ class MultiReaderEngine:
                     "answer": text,
                     "latency_ms": round(lat, 2),
                     "token_count": len(text.split()),
+                    "context_tokens": ctx_tok,
+                    "mode": "Live API Success",
+                    "execution_mode": "Live API Success",
                     "status": "Live API Success"
                 }
         except Exception as e:
@@ -131,6 +142,9 @@ class MultiReaderEngine:
                 "answer": f"{local_ans} [Fallback due to: {str(e)[:50]}]",
                 "latency_ms": round((time.time() - start_t) * 1000.0, 2),
                 "token_count": len(local_ans.split()),
+                "context_tokens": ctx_tok,
+                "mode": f"Fallback ({str(e)[:30]})",
+                "execution_mode": f"Fallback ({str(e)[:30]})",
                 "status": f"Fallback ({str(e)[:30]})"
             }
 
@@ -141,6 +155,7 @@ class MultiReaderEngine:
         """
         start_t = time.time()
         api_key = self.groq_api_key
+        ctx_tok = len(context.split())
 
         if not api_key:
             time.sleep(0.06)
@@ -152,6 +167,9 @@ class MultiReaderEngine:
                 "answer": groq_ans,
                 "latency_ms": round(lat, 2),
                 "token_count": len(groq_ans.split()),
+                "context_tokens": ctx_tok,
+                "mode": "Simulated (Free Cloud)",
+                "execution_mode": "Simulated (Free Cloud)",
                 "status": "Simulated (Set GROQ_API_KEY for live endpoint)"
             }
 
@@ -184,6 +202,9 @@ class MultiReaderEngine:
                     "answer": text,
                     "latency_ms": round(lat, 2),
                     "token_count": len(text.split()),
+                    "context_tokens": ctx_tok,
+                    "mode": "Live API Success",
+                    "execution_mode": "Live API Success",
                     "status": "Live API Success"
                 }
         except Exception as e:
@@ -193,6 +214,9 @@ class MultiReaderEngine:
                 "answer": f"{local_ans} [Fallback due to: {str(e)[:50]}]",
                 "latency_ms": round((time.time() - start_t) * 1000.0, 2),
                 "token_count": len(local_ans.split()),
+                "context_tokens": ctx_tok,
+                "mode": f"Fallback ({str(e)[:30]})",
+                "execution_mode": f"Fallback ({str(e)[:30]})",
                 "status": f"Fallback ({str(e)[:30]})"
             }
 

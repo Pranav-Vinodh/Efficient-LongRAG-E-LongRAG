@@ -156,6 +156,7 @@ While dense vector retrieval excels at capturing semantic intent, it struggles w
 \begin{table*}[!t]
 \caption{Systematic Literature Comparison and Research Gap Identification\label{tab:literature_comparison}}
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Architecture / System} & \textbf{Chunk Granularity} & \textbf{Multi-Hop Recall} & \textbf{Prompt Token Bloat} & \textbf{TTFT Latency} & \textbf{Lost-in-Middle Risk} & \textbf{Hardware Requirement} \\
@@ -166,7 +167,8 @@ RAPTOR (Tree Summarization) & Hierarchical Summaries & Moderate & Moderate ($\ap
 LongLLMLingua~\cite{lostinmiddle} & Token Pruned & Moderate & Compressed ($2\times$--$4\times$) & Moderate ($\approx 800\text{ ms}$) & Moderate & High GPU (7B Evaluator) \\
 \textbf{Proposed E-LongRAG} & \textbf{4k Index + Sliced Paras} & \textbf{High ($>96\%$)} & \textbf{Compact ($\mathbf{260.8}$ tok)} & \textbf{Near-Instant ($\mathbf{\approx 100\text{ ms}}$)} & \textbf{Zero ($\mathbf{100\%}$ Invariant)} & \textbf{Zero-GPU (Pure CPU)} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 \subsection{Research Gap Identification}

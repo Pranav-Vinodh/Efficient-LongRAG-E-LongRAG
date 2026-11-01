@@ -106,10 +106,16 @@ class LostInTheMiddleStressTester:
         # In a 10k context, precision is low due to distractor dilution
         precision_pct = round((250.0 / total_tokens) * 100.0 * (attention_score / 0.95), 2)
 
+        est_passages = max(5, total_tokens // 250)
+        target_idx = max(1, min(est_passages, int(round(position_pct * (est_passages - 1))) + 1))
+
         return {
             "position_pct": int(position_pct * 100),
             "position_label": f"{int(position_pct * 100)}% ({'Head' if position_pct == 0 else 'Tail' if position_pct == 1 else 'Center' if position_pct == 0.5 else 'Quarter'})",
             "attention_weight": round(attention_score, 3),
+            "relative_attention_weight": round(attention_score, 3),
+            "target_index": target_idx,
+            "total_passages": est_passages,
             "recall_pct": recall_pct,
             "precision_pct": precision_pct,
             "hallucination_risk": "HIGH" if recall_pct < 65 else "MEDIUM" if recall_pct < 85 else "LOW"
@@ -157,6 +163,7 @@ class LostInTheMiddleStressTester:
                 "position_pct": int(pos * 100),
                 "position_label": f"{int(pos * 100)}% ({'Head' if pos == 0 else 'Tail' if pos == 1 else 'Center' if pos == 0.5 else 'Quarter'})",
                 "cross_encoder_score": round(target_score, 4),
+                "relevance_score": round(target_score, 4),
                 "selection_rank": target_rank,
                 "retained": is_retained,
                 "recall_pct": 100.0 if is_retained else 0.0,
