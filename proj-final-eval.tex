@@ -73,7 +73,7 @@
                     \item \textbf{Innovation 4}: Automated RAGAS Quality Metrics, EM \& Token F1.
                     \item \textbf{Innovation 5}: Cross-Encoder Sizing \& 42-Point Pareto Sensitivity Frontier.
                     \item \textbf{Innovation 6}: Multi-Reader Engine (CPU vs Gemini vs Groq) \& 10-Tab Dashboard.
-                    \item \textbf{Equal Team Contributions} across all 3 members.
+                    \item \textbf{Individual Contributions}: Dedicated breakdown slides for each member.
                 \end{itemize}
             \end{block}
         \end{column}
@@ -622,45 +622,38 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 17: Engineering Verification: 21/21 Unit Tests Passed
+% Slide 17: Individual Contributions - Pranav Vinodh
 % ---------------------------------------------------------
-\begin{frame}{Engineering Verification: 21/21 Unit Tests Passed}
+\begin{frame}{Individual Contributions: Pranav Vinodh}
+    \begin{block}{\textbf{Role: Lead System Architect \& Core Algorithmic Innovations}}
+        \footnotesize Primary architect responsible for end-to-end pipeline design, mathematical formulations, and all core algorithmic modules.
+    \end{block}
+
+    \vspace{0.1cm}
     \begin{columns}[onlytextwidth,T]
         \begin{column}{0.48\textwidth}
-            \begin{block}{\textbf{Automated Test Suite}}
+            \begin{block}{\textbf{Midsem Core Architecture}}
                 \scriptsize
                 \begin{itemize}\setlength\itemsep{2pt}
-                    \item \texttt{tests/test\_endsem\_modules.py} (8 tests):
-                    \begin{itemize}\scriptsize
-                        \item BM25 Indexing \& RSJ IDF Scoring
-                        \item Reciprocal Rank Fusion ($c=60$)
-                        \item Bi-Encoder Architecture Profiling
-                        \item Positional Distractor Stress Testing
-                        \item RAGAS Dimensions \& Exact Match
-                        \item Multi-Reader Engine Orchestration
-                        \item Cross-Encoder Sizing \& Pareto Grid
-                        \item Integrated Pipeline End-to-End
-                    \end{itemize}
-                    \item \texttt{tests/test\_modules.py} (7 tests): Core pipeline.
-                    \item \texttt{tests/test\_sampling.py} (6 tests): Sampling ablations.
+                    \item \textbf{Intra-Chunk Paragraph Slicer}: Decoupled 4k retrieval units into $200$--$350$ token reranking passages.
+                    \item \textbf{Dynamic Score Thresholding}: Formulated query-adaptive statistical cutoff $\tau(q) = \max(\tau_{\min}, \mu_R - \alpha \sigma_R)$.
+                    \item \textbf{Cosine Semantic Deduplication}: Implemented pairwise similarity pruning ($\delta = 0.85$).
+                    \item \textbf{Empirical Profiling}: Identified $O(N^2)$ TTFT latency bottlenecks and distractor noise.
                 \end{itemize}
             \end{block}
         \end{column}
         
         \begin{column}{0.48\textwidth}
-            \begin{alertblock}{\textbf{100\% Verification Status}}
-                \centering
-                \Large \textbf{21 / 21 Tests Passed} \\
-                \small Execution Time: 67.0s on Host CPU \\
-                \textcolor{accentgreen}{\textbf{100\% Success Rate --- Zero Failures}}
-            \end{alertblock}
-            
-            \begin{block}{\textbf{Hardware Accessibility}}
+            \begin{block}{\textbf{Endsem Core Innovations \& Modules}}
                 \scriptsize
                 \begin{itemize}\setlength\itemsep{2pt}
-                    \item Runs locally on standard consumer CPU.
-                    \item Requires zero paid GPU compute.
-                    \item Memory footprint: $<400\text{ MB}$ RAM total.
+                    \item \textbf{Hybrid Dense-Lexical Search}: Implemented pure-Python Okapi BM25 and Robertson-Spärck Jones IDF.
+                    \item \textbf{Reciprocal Rank Fusion (RRF)}: Fused dense FAISS and BM25 rankings ($c=60$) in \texttt{hybrid\_search.py}.
+                    \item \textbf{Retrieval Sampling Suite}: Formulated Top-$K$, Top-$p$, Boltzmann, MMR, and Adaptive Filter in \texttt{sampling.py}.
+                    \item \textbf{Intra-Context Diversity}: Formulated $\text{Div}(\mathcal{S})$ metric.
+                    \item \textbf{Lost-in-the-Middle}: Formulated 10k-token stress testing and invariance proof in \texttt{lost\_in\_the\_middle.py}.
+                    \item \textbf{RAGAS Quality \& Multi-Reader}: Built automated evaluator (EM, F1) and multi-reader engine in \texttt{reader.py}.
+                    \item \textbf{Pareto Sweeper}: Built 42-point 2D grid sweeper in \texttt{sensitivity.py}.
                 \end{itemize}
             \end{block}
         \end{column}
@@ -668,63 +661,69 @@
 \end{frame}
 
 % ---------------------------------------------------------
-% Slide 18: Detailed Team Member Contributions (Equally Divided)
+% Slide 18: Individual Contributions - Durga Sai Pavan G.
 % ---------------------------------------------------------
-\begin{frame}{Individual Team Contributions (Equally Divided)}
+\begin{frame}{Individual Contributions: Durga Sai Pavan Gangabattula}
+    \begin{block}{\textbf{Role: Web Dashboard Front-End \& Visual Telemetry Interface}}
+        \footnotesize Responsible for designing and developing the interactive web interface, user controls, and static chart generation.
+    \end{block}
+
+    \vspace{0.1cm}
     \begin{columns}[onlytextwidth,T]
-        \begin{column}{0.32\textwidth}
-            \begin{block}{\textbf{Pranav Vinodh}}
-                \tiny
-                \textbf{Midsem Deliverables}:
-                \begin{itemize}\setlength\itemsep{1pt}
-                    \item Intra-chunk paragraph slicing pipeline.
-                    \item Dynamic statistical cutoff $\tau(q)$.
-                    \item Cosine deduplication threshold $\delta=0.85$.
-                \end{itemize}
-                \textbf{Endsem Deliverables}:
-                \begin{itemize}\setlength\itemsep{1pt}
-                    \item Retrieval Sampling Suite (Top-K, Nucleus, Boltzmann, MMR) in \texttt{sampling.py}.
-                    \item Intra-Context Diversity metric $\text{Div}(\mathcal{S})$.
-                    \item 42-point 2D Sensitivity Pareto Sweeper in \texttt{sensitivity.py}.
-                    \item 10-Tab Streamlit Dashboard in \texttt{app.py}.
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Midsem Deliverables}}
+                \scriptsize
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{HyDE Generative Query Expansion}: Implemented prompt synthesis template in \texttt{src/hyde.py}.
+                    \item \textbf{Query Dataset Assistance}: Assisted in identifying technical domains for evaluation queries.
+                    \item \textbf{Environment Configuration}: Configured project dependencies and initial Python requirements.
                 \end{itemize}
             \end{block}
         \end{column}
         
-        \begin{column}{0.32\textwidth}
-            \begin{block}{\textbf{Durga Sai Pavan G.}}
-                \tiny
-                \textbf{Midsem Deliverables}:
-                \begin{itemize}\setlength\itemsep{1pt}
-                    \item HyDE Query Expansion in \texttt{hyde.py}.
-                    \item Benchmark QA dataset curation and caching in \texttt{dataset\_loader.py}.
-                    \item Modular unit test architecture.
-                \end{itemize}
-                \textbf{Endsem Deliverables}:
-                \begin{itemize}\setlength\itemsep{1pt}
-                    \item Pure-Python Okapi BM25 index and Robertson-Spärck Jones IDF.
-                    \item Hybrid Dense-Lexical Search with RRF ($c=60$) in \texttt{hybrid\_search.py}.
-                    \item Multi-Reader Engine (CPU, Gemini, Groq) in \texttt{reader.py}.
-                    \item Unit tests for hybrid search and readers.
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Endsem Deliverables: UI \& Visualization}}
+                \scriptsize
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{Streamlit Web Dashboard}: Developed the 10-tab front-end user application in \texttt{app.py}.
+                    \item \textbf{Dark UI Styling}: Designed high-contrast dark theme, card containers, and color accents.
+                    \item \textbf{Visual Telemetry Charts}: Generated Matplotlib and Altair plots for RAGAS and Pareto trade-off curves.
+                    \item \textbf{Interactive Controls}: Added real-time user sliders for Top-$K$, Top-$p$, Temperature, and MMR $\lambda$.
                 \end{itemize}
             \end{block}
         \end{column}
+    \end{columns}
+\end{frame}
 
-        \begin{column}{0.32\textwidth}
-            \begin{block}{\textbf{Sameer}}
-                \tiny
-                \textbf{Midsem Deliverables}:
-                \begin{itemize}\setlength\itemsep{1pt}
-                    \item Coarse 4k chunking in \texttt{chunker.py}.
-                    \item FAISS \texttt{IndexFlatIP} vector store in \texttt{vector\_store.py}.
-                    \item Core latency and token profiling.
+% ---------------------------------------------------------
+% Slide 19: Individual Contributions - Sameer
+% ---------------------------------------------------------
+\begin{frame}{Individual Contributions: Sameer}
+    \begin{block}{\textbf{Role: Corpus Curation, Benchmarking Support \& Documentation}}
+        \footnotesize Responsible for supporting data curation, baseline runtime measurement, and documentation review.
+    \end{block}
+
+    \vspace{0.1cm}
+    \begin{columns}[onlytextwidth,T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Midsem Deliverables}}
+                \scriptsize
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{Coarse Chunk Assembly}: Assisted in aggregating raw corpus files into 4,000-token blocks in \texttt{chunker.py}.
+                    \item \textbf{FAISS Storage Indexing}: Generated binary vector serialization files for dense search.
+                    \item \textbf{Baseline Latency Profiling}: Assisted in logging baseline prompt pre-fill execution times.
                 \end{itemize}
-                \textbf{Endsem Deliverables}:
-                \begin{itemize}\setlength\itemsep{1pt}
-                    \item Positional ``Lost-in-the-Middle'' Stress Tester in \texttt{lost\_in\_the\_middle.py}.
-                    \item Automated RAGAS quality evaluator (EM, F1) in \texttt{ragas\_eval.py}.
-                    \item Bi-encoder footprint and cross-encoder model sizing ablation.
-                    \item Unit tests for stress testing and RAGAS.
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\textbf{Endsem Deliverables: Data \& Evaluation}}
+                \scriptsize
+                \begin{itemize}\setlength\itemsep{3pt}
+                    \item \textbf{Dataset Serialization}: Formatted 50 multi-hop reasoning instances into \texttt{sample\_dataset.json}.
+                    \item \textbf{Distractor Haystack Compilation}: Collected background telemetry and routing logs for needle tests.
+                    \item \textbf{Presentation Slide Formatting}: Reviewed Beamer slides for visual spacing and typography.
+                    \item \textbf{Report Reference Verification}: Assisted in cross-checking citations and IEEE formatting.
                 \end{itemize}
             \end{block}
         \end{column}
