@@ -896,13 +896,29 @@ with tab_pareto:
         </div>
         """, unsafe_allow_html=True)
 
-    # Curve of Savings vs Precision
-    st.markdown("##### 📈 Trade-Off Curve: Token Savings vs Context Precision")
+    # Curve of Savings vs Precision & Recall
+    st.markdown("##### 📈 Multi-Objective Pareto Frontier: Token Savings vs Precision & Recall")
     scatter_df = pd.DataFrame({
         "Token Savings (%)": [pt["token_savings_pct"] for pt in pareto_pts],
-        "Context Precision (%)": [pt["precision"] for pt in pareto_pts]
+        "Context Precision (%)": [pt["precision"] for pt in pareto_pts],
+        "Evidence Recall (%)": [pt["recall"] for pt in pareto_pts]
     }).set_index("Token Savings (%)")
     st.line_chart(scatter_df)
+
+    with st.expander("🔍 View All 42 Parameter Grid Configurations (7 Alpha x 6 Delta)"):
+        all_rows = []
+        for pt in sweep_data.get("all_points", []):
+            all_rows.append({
+                "Alpha (Cutoff)": f"{pt['alpha']:.2f}",
+                "Delta (Dedup)": f"{pt['delta']:.2f}",
+                "Tau Threshold": f"{pt.get('threshold', 0.40):.3f}",
+                "Passages": pt.get("retained_count", 2),
+                "Tokens": pt.get("retained_tokens", 260),
+                "Token Savings (%)": f"{pt['token_savings_pct']:.1f}%",
+                "Precision (%)": f"{pt['precision']:.1f}%",
+                "Recall (%)": f"{pt['recall']:.1f}%"
+            })
+        st.dataframe(pd.DataFrame(all_rows), use_container_width=True)
 
 
 # -------------------------------------------------------------
