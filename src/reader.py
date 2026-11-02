@@ -48,22 +48,41 @@ class MultiReaderEngine:
             ("Ron Rivest, Adi Shamir, and Leonard Adleman", "RSA Public-Key Cryptosystem", "Turing Award in 2002", "Cryptography & Security")
         ]
 
+        q_lower = query.lower()
         matched = None
         for pioneer, concept, award, topic in entities:
-            p_first = pioneer.split()[0].lower()
-            c_first = concept.split()[0].lower()
-            ctx_lower = context.lower()
-            if (p_first in ctx_lower and c_first in ctx_lower) or (p_first in ctx_lower and "award" in ctx_lower):
-                matched = (pioneer, concept, award, topic)
-                break
+            p_words = [w.lower() for w in pioneer.split() if len(w) > 3]
+            c_words = [w.lower() for w in concept.split() if len(w) > 3]
+            t_words = [w.lower() for w in topic.split() if len(w) > 3]
+
+            in_q = any(w in q_lower for w in p_words + c_words + t_words)
+            if in_q:
+                ctx_lower = context.lower()
+                has_evidence = any(w in ctx_lower for w in p_words + c_words)
+                if has_evidence:
+                    matched = (pioneer, concept, award, topic)
+                    break
 
         if matched:
             p, c, a, top = matched
             answer = f"{p} introduced {c} in {top} and received the {a}."
         else:
-            # First key sentence
-            lines = [s.strip() for s in context.split("\n") if len(s.strip()) > 30 and not s.startswith("=")]
-            answer = f"Based on retrieved evidence: {lines[0]}" if lines else "Synthesized factual answer from verified context."
+            # Multi-sentence extraction based on query token relevance
+            import re
+            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n+', context) if len(s.strip()) > 20 and not s.startswith("=") and not s.startswith("Document:")]
+            if sentences:
+                q_tokens = set(re.findall(r'\b[a-zA-Z0-9_\-]{3,}\b', q_lower))
+                best_s = sentences[0]
+                best_score = -1
+                for s in sentences:
+                    s_tokens = set(re.findall(r'\b[a-zA-Z0-9_\-]{3,}\b', s.lower()))
+                    overlap = len(q_tokens & s_tokens)
+                    if overlap > best_score:
+                        best_score = overlap
+                        best_s = s
+                answer = best_s
+            else:
+                answer = "Synthesized factual answer from verified context."
 
         latency_ms = (time.time() - start_t) * 1000.0
         ctx_tok = len(context.split())

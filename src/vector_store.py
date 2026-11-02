@@ -1,14 +1,16 @@
 import os
 import time
+import json
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
-from .config import EMBEDDING_MODEL_NAME, FAISS_INDEX_PATH
+from .config import EMBEDDING_MODEL_NAME, FAISS_INDEX_PATH, LONG_CHUNKS_PATH
 
 class LongRAGVectorStore:
     """
     FAISS dense vector index for LongRAG.
     Indexes long-context chunks (~2k-4k tokens) using L2-normalized cosine similarity (IndexFlatIP).
+    Utilizes multi-passage max+mean pooling to preserve full semantic coverage across long contexts.
     """
     _instance = None
 
@@ -25,6 +27,9 @@ class LongRAGVectorStore:
             try:
                 self.index = faiss.read_index(FAISS_INDEX_PATH)
                 print(f"[VectorStore] Successfully loaded FAISS index with {self.index.ntotal} vectors.")
+                if os.path.exists(LONG_CHUNKS_PATH):
+                    with open(LONG_CHUNKS_PATH, "r", encoding="utf-8") as f:
+                        self.chunks = json.load(f)
             except Exception as e:
                 print(f"[VectorStore] Could not load existing index ({e}), will build fresh.")
 
@@ -34,15 +39,24 @@ class LongRAGVectorStore:
             print(f"[VectorStore] Reusing existing FAISS index ({self.index.ntotal} vectors).")
             return self.index
 
-        texts = [c["text"] for c in chunks]
-        print(f"[VectorStore] Encoding {len(texts)} long chunks with normalized embeddings...")
+        print(f"[VectorStore] Encoding {len(chunks)} long chunks with multi-passage pooled embeddings...")
         
         start_t = time.time()
-        embeddings = self.encoder.encode(texts, show_progress_bar=False, normalize_embeddings=True)
+        chunk_embeddings = []
+        for c in chunks:
+            paras = [p.strip() for p in c.get("text", "").split("\n\n") if len(p.strip()) > 30]
+            if not paras:
+                paras = [c.get("text", "")[:500]]
+            p_embs = self.encoder.encode(paras, show_progress_bar=False, normalize_embeddings=True)
+            # Combine max-pooling (dominant salient features) and mean-pooling (global context)
+            pooled = np.max(p_embs, axis=0) + 0.5 * np.mean(p_embs, axis=0)
+            pooled = pooled / np.linalg.norm(pooled)
+            chunk_embeddings.append(pooled)
+
         encode_time = time.time() - start_t
         print(f"[VectorStore] Chunk encoding completed in {encode_time:.2f}s.")
 
-        embeddings_np = np.array(embeddings, dtype=np.float32)
+        embeddings_np = np.array(chunk_embeddings, dtype=np.float32)
         self.index = faiss.IndexFlatIP(self.dimension)
         self.index.add(embeddings_np)
         

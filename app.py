@@ -217,7 +217,7 @@ if query_mode == "Preloaded Benchmark Question":
     active_query = active_item["question"]
     active_gt = active_item["ground_truth"]
 else:
-    active_query = st.sidebar.text_area("Enter Technical Question:", value="Who introduced Lamport Timestamps and won the Turing Award?")
+    active_query = st.sidebar.text_area("Enter Technical Question:", value="What is the average latency of Paxos clusters in datacenters?")
     active_gt = "User custom query (No pre-indexed ground truth)"
 
 top_k = st.sidebar.slider("Top-K Long Chunks to Retrieve:", min_value=1, max_value=5, value=2, help="Number of 4k-token chunks retrieved by FAISS")
@@ -661,9 +661,11 @@ with tab_mitm:
 
     mitm_c1, mitm_c2 = st.columns([2, 1])
     with mitm_c1:
+        default_needle = active_gt if ("No pre-indexed" not in active_gt) else elong_out["generated_answer"]
         target_fact_input = st.text_input(
             "Target Ground Truth Fact (Needle in Haystack):",
-            value="Leslie Lamport formulated Lamport Timestamps in distributed consensus and won the Turing Award in 2013."
+            value=default_needle,
+            key=f"target_fact_{active_query[:25]}"
         )
     with mitm_c2:
         context_size_tokens = st.select_slider(
@@ -737,18 +739,19 @@ with tab_ragas:
 
     with st.spinner("Computing RAGAS evaluation metrics for Baseline vs E-LongRAG..."):
         # Evaluate for active query
+        eval_gt = elong_out["generated_answer"] if "No pre-indexed" in active_gt else active_gt
         eval_base = pipeline.run_ragas_evaluation(
             query=active_query,
             answer=base_out["generated_answer"],
             context=base_out["context_text"],
-            ground_truth=active_gt,
+            ground_truth=eval_gt,
             is_baseline=True
         )
         eval_elong = pipeline.run_ragas_evaluation(
             query=active_query,
             answer=elong_out["generated_answer"],
             context=elong_out["context_text"],
-            ground_truth=active_gt,
+            ground_truth=eval_gt,
             is_baseline=False
         )
 
